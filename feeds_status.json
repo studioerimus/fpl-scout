@@ -4,7 +4,7 @@
   "rotowire_http": 200,
   "rotowire_teams_seen": 20,
   "lineups": "refreshed 18 teams",
-  "odds_key_present": false,
-  "odds": "oddschecker parsed 0, kept seeded",
-  "ts": "2026-07-25 10:27 UTC"
+  "odds_key_present": true,
+  "odds": "the-odds-api 10 matches",
+  "ts": "2026-07-25 10:36 UTC"
 }
