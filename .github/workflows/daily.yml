@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: '0 6 * * *'      # 06:00 UTC (~08:00 your time). Runs on GitHub's servers, laptop off.
   workflow_dispatch: {}       # lets you run it manually from the Actions tab
+  push:
+    branches: [main]          # also run when code changes (its own daily commit is marked [skip ci])
 
 permissions:
   contents: write             # so it can commit the rebuilt dashboard
@@ -25,7 +27,7 @@ jobs:
           git config user.name  "fpl-scout-bot"
           git config user.email "bot@users.noreply.github.com"
           git add -A
-          git commit -m "Daily refresh $(date -u +%Y-%m-%d)" || echo "nothing changed"
+          git commit -m "Daily refresh $(date -u +%Y-%m-%d) [skip ci]" || echo "nothing changed"
           git push
       - name: Email it to you (optional — only runs if you add the two mail secrets)
         if: ${{ env.MAIL_USERNAME != '' }}
