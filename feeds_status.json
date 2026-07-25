@@ -1,0 +1,10 @@
+{
+  "playwright_import": "ok",
+  "chromium_launch": "ok chromium",
+  "rotowire_http": 200,
+  "rotowire_teams_seen": 20,
+  "lineups": "refreshed 18 teams",
+  "odds_key_present": false,
+  "odds": "oddschecker parsed 0, kept seeded",
+  "ts": "2026-07-25 10:27 UTC"
+}
