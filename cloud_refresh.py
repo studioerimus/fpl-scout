@@ -81,20 +81,28 @@ ROTOWIRE_JS = r"""() => {
   return {teams,blocks};
 }"""
 
+STATUS = {}
 def scrape_feeds():
     try:
         from playwright.sync_api import sync_playwright
     except Exception as e:
-        print('playwright unavailable, keeping seeded feeds:', e); return
+        STATUS['playwright_import'] = 'FAIL: '+str(e); print('playwright unavailable:', e); return
+    STATUS['playwright_import'] = 'ok'
     UA2 = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36'
     with sync_playwright() as pw:
-        br = pw.chromium.launch(args=['--no-sandbox','--disable-blink-features=AutomationControlled'])
+        try:
+            br = pw.chromium.launch(args=['--no-sandbox','--disable-dev-shm-usage','--disable-blink-features=AutomationControlled'])
+            STATUS['chromium_launch'] = 'ok ' + pw.chromium.name
+        except Exception as e:
+            STATUS['chromium_launch'] = 'FAIL: '+str(e)[:200]; print('chromium launch failed:', e); return
         pg = br.new_context(user_agent=UA2, locale='en-GB').new_page()
         # lineups (Rotowire)
         try:
-            pg.goto('https://www.rotowire.com/soccer/lineups.php', timeout=45000, wait_until='domcontentloaded')
+            r = pg.goto('https://www.rotowire.com/soccer/lineups.php', timeout=40000, wait_until='domcontentloaded')
+            STATUS['rotowire_http'] = r.status if r else None
             pg.wait_for_timeout(3000)
             data = pg.evaluate(ROTOWIRE_JS)
+            STATUS['rotowire_teams_seen'] = len(data.get('teams', []))
             start, inj = {}, {}
             for k, team in enumerate(data['teams']):
                 blk = data['blocks'][k] if k < len(data['blocks']) else None
@@ -104,14 +112,15 @@ def scrape_feeds():
             if start:
                 json.dump({'start': start, 'unposted': [t for t in set(data['teams']) if t not in start], 'inj': inj},
                           open(path('lineups.json'), 'w'))
-                print('lineups: refreshed,', len(start), 'teams posted')
+                STATUS['lineups'] = f'refreshed {len(start)} teams'; print('lineups refreshed:', len(start))
             else:
-                print('lineups: page loaded but nothing parsed, kept seeded')
+                STATUS['lineups'] = 'loaded but 0 parsed, kept seeded'
         except Exception as e:
-            print('lineups scrape failed, kept seeded:', e)
+            STATUS['lineups'] = 'FAIL: '+str(e)[:200]; print('lineups failed:', e)
         # odds — prefer the-odds-api (reliable JSON) if a key is set, else Oddschecker
         got = False
         key = os.environ.get('ODDS_API_KEY')
+        STATUS['odds_key_present'] = bool(key)
         if key:
             try:
                 ev = get(f'https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?regions=uk&markets=h2h&oddsFormat=decimal&apiKey={key}')
@@ -138,8 +147,11 @@ def scrape_feeds():
                 if matches:
                     json.dump({'matches': matches}, open(path('odds.json'), 'w'))
                     print('odds: refreshed via the-odds-api,', len(matches), 'matches'); got = True
+                    STATUS['odds'] = f'the-odds-api {len(matches)} matches'
+                else:
+                    STATUS['odds'] = 'the-odds-api returned 0 usable matches'
             except Exception as e:
-                print('the-odds-api failed:', e)
+                STATUS['odds'] = 'the-odds-api FAIL: '+str(e)[:150]; print('the-odds-api failed:', e)
         if not got:
             try:
                 pg.goto('https://www.oddschecker.com/football/english/premier-league', timeout=45000, wait_until='domcontentloaded')
@@ -159,16 +171,21 @@ def scrape_feeds():
                 if matches:
                     json.dump({'matches': matches[:10]}, open(path('odds.json'), 'w'))
                     print('odds: refreshed via Oddschecker,', len(matches), 'matches')
+                    STATUS['odds'] = f'oddschecker {len(matches)} matches'
                 else:
+                    STATUS['odds'] = 'oddschecker parsed 0, kept seeded'
                     print('odds: Oddschecker parsed nothing, kept seeded')
             except Exception as e:
-                print('odds scrape failed, kept seeded:', e)
+                STATUS['odds'] = 'oddschecker FAIL: '+str(e)[:150]; print('odds scrape failed, kept seeded:', e)
         br.close()
 
 try:
     scrape_feeds()
 except Exception as e:
-    print('feeds step error (kept seeded):', e)
+    STATUS['fatal'] = str(e)[:200]; print('feeds step error (kept seeded):', e)
+STATUS['ts'] = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+json.dump(STATUS, open(path('feeds_status.json'), 'w'), indent=2)
+print('feeds_status:', json.dumps(STATUS))
 
 # ---- 3. rebuild (keep previous data for the diff) ----
 if os.path.exists(path('dash_data.json')):
