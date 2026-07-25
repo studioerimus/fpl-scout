@@ -51,6 +51,125 @@ try:
 except Exception as ex:
     print('team sync warning (kept previous):', ex)
 
+# ---- 2c. live feeds: predicted lineups (Rotowire) + odds (the-odds-api, Oddschecker fallback) ----
+NAMEMAP = {'arsenal':'ARS','aston villa':'AVL','bournemouth':'BOU','brentford':'BRE','brighton':'BHA',
+           'chelsea':'CHE','coventry':'COV','crystal palace':'CRY','everton':'EVE','fulham':'FUL',
+           'hull':'HUL','ipswich':'IPS','leeds':'LEE','liverpool':'LIV','manchester city':'MCI',
+           'manchester united':'MUN','newcastle':'NEW','nottingham':'NFO','tottenham':'TOT','sunderland':'SUN'}
+def to_short(name):
+    n = (name or '').lower()
+    for k, v in NAMEMAP.items():
+        if k in n: return v
+    return None
+
+ROTOWIRE_JS = r"""() => {
+  const map={'Arsenal':'ARS','Coventry City':'COV','Hull City':'HUL','Manchester United':'MUN','Nottingham Forest':'NFO','Leeds United':'LEE','Ipswich Town':'IPS','Sunderland':'SUN','Everton':'EVE','Crystal Palace':'CRY','Brentford':'BRE','Tottenham Hotspur':'TOT','Manchester City':'MCI','AFC Bournemouth':'BOU','Brighton & Hove Albion':'BHA','Aston Villa':'AVL','Newcastle United':'NEW','Liverpool':'LIV','Fulham':'FUL','Chelsea':'CHE'};
+  const SPS=new Set(['GK','DL','DC','DR','DMC','DML','DMR','WBL','WBR','ML','MC','MR','CM','AML','AMC','AMR','FWL','FWR','FWC','FW','ST','LW','RW']);
+  const sn=n=>{const p=n.replace(/\./g,'').trim().split(/\s+/);return p[p.length-1];};
+  const el=document.querySelector('main')||document.body;
+  const lines=el.innerText.split('\n').map(s=>s.trim()).filter(Boolean);
+  const teams=[],blocks=[]; let cur=null,mode=null;
+  for(const ln of lines){
+    if(map[ln]){teams.push(map[ln]);continue;}
+    if(/^(Predicted|Confirmed|Unknown) Lineup$/.test(ln)){cur={xi:[],inj:[]};blocks.push(cur);mode='xi';continue;}
+    if(ln==='Injuries'){mode='inj';continue;}
+    const m=ln.match(/^(\S+)\s+(.+?)(?:\s+(QUES|OUT|SUS|DOUBT))?$/);
+    if(!m||!cur)continue;
+    if(mode==='xi'&&SPS.has(m[1]))cur.xi.push(sn(m[2]));
+    else if(mode==='inj'&&m[3])cur.inj.push([sn(m[2]),m[3]]);
+  }
+  return {teams,blocks};
+}"""
+
+def scrape_feeds():
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception as e:
+        print('playwright unavailable, keeping seeded feeds:', e); return
+    UA2 = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36'
+    with sync_playwright() as pw:
+        br = pw.chromium.launch(args=['--no-sandbox','--disable-blink-features=AutomationControlled'])
+        pg = br.new_context(user_agent=UA2, locale='en-GB').new_page()
+        # lineups (Rotowire)
+        try:
+            pg.goto('https://www.rotowire.com/soccer/lineups.php', timeout=45000, wait_until='domcontentloaded')
+            pg.wait_for_timeout(3000)
+            data = pg.evaluate(ROTOWIRE_JS)
+            start, inj = {}, {}
+            for k, team in enumerate(data['teams']):
+                blk = data['blocks'][k] if k < len(data['blocks']) else None
+                if not blk: continue
+                if blk['xi']: start[team] = blk['xi']
+                if blk['inj']: inj[team] = {s: t for s, t in blk['inj']}
+            if start:
+                json.dump({'start': start, 'unposted': [t for t in set(data['teams']) if t not in start], 'inj': inj},
+                          open(path('lineups.json'), 'w'))
+                print('lineups: refreshed,', len(start), 'teams posted')
+            else:
+                print('lineups: page loaded but nothing parsed, kept seeded')
+        except Exception as e:
+            print('lineups scrape failed, kept seeded:', e)
+        # odds — prefer the-odds-api (reliable JSON) if a key is set, else Oddschecker
+        got = False
+        key = os.environ.get('ODDS_API_KEY')
+        if key:
+            try:
+                ev = get(f'https://api.the-odds-api.com/v4/sports/soccer_epl/odds/?regions=uk&markets=h2h&oddsFormat=decimal&apiKey={key}')
+                matches, seen = [], set()
+                for e in ev:
+                    h, a = to_short(e.get('home_team')), to_short(e.get('away_team'))
+                    if not h or not a or h in seen or a in seen: continue
+                    prices = {'H': [], 'D': [], 'A': []}
+                    for bk in e.get('bookmakers', []):
+                        for mk in bk.get('markets', []):
+                            if mk.get('key') != 'h2h': continue
+                            for o in mk.get('outcomes', []):
+                                s = to_short(o.get('name'))
+                                if s == h: prices['H'].append(o['price'])
+                                elif s == a: prices['A'].append(o['price'])
+                                elif 'draw' in o.get('name','').lower(): prices['D'].append(o['price'])
+                    if not (prices['H'] and prices['D'] and prices['A']): continue
+                    med = lambda L: sorted(L)[len(L)//2]
+                    ph, pd, pa = 1/med(prices['H']), 1/med(prices['D']), 1/med(prices['A'])
+                    s = ph+pd+pa
+                    matches.append({'h': h, 'a': a, 'pH': round(ph/s,3), 'pD': round(pd/s,3), 'pA': round(pa/s,3)})
+                    seen.add(h); seen.add(a)
+                    if len(matches) >= 10: break
+                if matches:
+                    json.dump({'matches': matches}, open(path('odds.json'), 'w'))
+                    print('odds: refreshed via the-odds-api,', len(matches), 'matches'); got = True
+            except Exception as e:
+                print('the-odds-api failed:', e)
+        if not got:
+            try:
+                pg.goto('https://www.oddschecker.com/football/english/premier-league', timeout=45000, wait_until='domcontentloaded')
+                pg.wait_for_timeout(3000)
+                txt = pg.inner_text('body')
+                import re
+                toks = [t.strip() for t in txt.split('\n') if t.strip()]
+                frac = re.compile(r'^\d+/\d+$')
+                matches, i = [], 0
+                while i < len(toks)-4:
+                    h, a = to_short(toks[i]), to_short(toks[i+1])
+                    if h and a and frac.match(toks[i+2]) and frac.match(toks[i+3]) and frac.match(toks[i+4]):
+                        def p(fr): x,y = fr.split('/'); return float(y)/(float(x)+float(y))
+                        ph, pd, pa = p(toks[i+2]), p(toks[i+3]), p(toks[i+4]); s=ph+pd+pa
+                        matches.append({'h':h,'a':a,'pH':round(ph/s,3),'pD':round(pd/s,3),'pA':round(pa/s,3)}); i+=5
+                    else: i+=1
+                if matches:
+                    json.dump({'matches': matches[:10]}, open(path('odds.json'), 'w'))
+                    print('odds: refreshed via Oddschecker,', len(matches), 'matches')
+                else:
+                    print('odds: Oddschecker parsed nothing, kept seeded')
+            except Exception as e:
+                print('odds scrape failed, kept seeded:', e)
+        br.close()
+
+try:
+    scrape_feeds()
+except Exception as e:
+    print('feeds step error (kept seeded):', e)
+
 # ---- 3. rebuild (keep previous data for the diff) ----
 if os.path.exists(path('dash_data.json')):
     os.replace(path('dash_data.json'), path('dash_data_prev.json'))

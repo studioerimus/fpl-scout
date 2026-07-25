@@ -19,7 +19,11 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install deps
-        run: pip install pulp
+        run: |
+          pip install pulp playwright
+          python -m playwright install --with-deps chromium
+      - name: Provide odds API key to the run (optional secret)
+        run: echo "ODDS_API_KEY=${{ secrets.ODDS_API_KEY }}" >> $GITHUB_ENV
       - name: Fetch FPL + rebuild dashboard
         run: python cloud_refresh.py
       - name: Commit the fresh dashboard
