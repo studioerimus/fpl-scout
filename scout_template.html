@@ -224,10 +224,12 @@
   <section class="view" id="v-optimal">
     <div style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:12px">
       <div><h3 class="sec">Optimal XI</h3>
-        <p class="secn">The best legal £100m squad the model can build, maximising projected points over your chosen window. Solved, not guessed. Two keepers capped at £9.0m combined, your rotation rule.</p></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Window</span>
-        <div class="seg" id="opthorizon"><button data-h="1">1</button><button data-h="2">2</button><button data-h="3" class="on">3</button><button data-h="4">4</button><button data-h="5">5</button></div>
+        <p class="secn">The best legal £100m squad the model can build, maximising projected points over your chosen window. Solved, not guessed. Flip on Bench Boost and it values all fifteen, so it spends up for two playing keepers and a starting bench.</p></div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Window</span>
+        <div class="seg" id="opthorizon"><button data-h="1">1</button><button data-h="2">2</button><button data-h="3" class="on">3</button><button data-h="4">4</button><button data-h="5">5</button></div></div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Chip</span>
+        <div class="seg" id="optchip"><button data-c="none" class="on">None</button><button data-c="bb">Bench Boost</button></div></div>
       </div>
     </div>
     <div class="lockbar">
@@ -490,8 +492,8 @@ renderFix();
 document.getElementById('legend').innerHTML='<span style="color:var(--muted)">Rating</span><span class="vr vrA">8.5+</span><span class="vr vrB">7+</span><span class="vr vrC">5.5+</span><span class="vr vrD">4+</span><span style="color:var(--faint);margin-left:8px">Trend = net transfers · xGΔ green = under xG (due) · EO~ estimated</span>';
 
 /* Optimal XI — live client-side solver with player locks */
-let optH=3, optLocks=[];
-const GK_CAP=9.0;   // Jack's rule: two keepers combined <= £9.0m
+let optH=3, optLocks=[], chip='none';
+let GK_CAP=Infinity;   // combined GK cap removed at Jack's request (Bench Boost build wants two playing keepers)
 const FORMS=[[3,4,3],[3,5,2],[4,3,3],[4,4,2],[4,5,1],[5,3,2],[5,4,1]];
 const xpH=p=>(p.xph&&p.xph.length)?p.xph[Math.min(Math.max(optH,1),5)-1]:0;
 function solveOptimal(){
@@ -557,19 +559,77 @@ function buildSquad(byPos,need,squad,lockedP,lockedSet){
   return {XI:xiAll.map(p=>p.i),BEN:benAll.map(p=>p.i),cap:capP.i,form:`${XI[2].length}-${XI[3].length}-${XI[4].length}`,cost:Math.round(cost*10)/10,score:Math.round(score(xiAll,capP)*10)/10};
 }
 function score(xi,cap){return xi.reduce((s,p)=>s+xpH(p),0)+xpH(cap);}
+/* Bench Boost: all 15 play, so maximise total-squad xP (no GK cap — two playing keepers fall out naturally) */
+function solveBenchBoost(){
+  const lockedSet=new Set(optLocks);
+  const base=DATA.players.filter(p=>p.xph&&(p.min>=250||p.pstart||mineSet.has(p.i)||lockedSet.has(p.i)));
+  const byPos={1:[],2:[],3:[],4:[]}; base.forEach(p=>byPos[p.pt].push(p));
+  for(const k in byPos) byPos[k].sort((a,b)=>xpH(b)-xpH(a));
+  const quota={1:2,2:5,3:5,4:3};
+  const sel=[], used=new Set(), club={}, posCount={1:0,2:0,3:0,4:0};
+  const canAdd=p=>((club[p.tid]||0)<3);
+  const addSel=p=>{sel.push(p);used.add(p.i);club[p.tid]=(club[p.tid]||0)+1;posCount[p.pt]++;};
+  const dropSel=p=>{sel.splice(sel.indexOf(p),1);used.delete(p.i);club[p.tid]--;posCount[p.pt]--;};
+  for(const id of optLocks){ const p=byId[id]; if(!p||!p.xph) return null; if(posCount[p.pt]>=quota[p.pt]||!canAdd(p)) return null; addSel(p); }
+  for(const pt of [1,2,3,4]){
+    for(const p of byPos[pt]){ if(posCount[pt]>=quota[pt])break; if(used.has(p.i)||!canAdd(p))continue; addSel(p); }
+    if(posCount[pt]<quota[pt]) return null;
+  }
+  let cost=sel.reduce((a,p)=>a+p.price,0);
+  const swap=(o,i)=>{dropSel(o);addSel(i);cost+=i.price-o.price;};
+  // cost repair to <=100, minimum xP loss per £
+  let g=0;
+  while(cost>100.0001&&g++<800){ let bs=null;
+    for(const o of sel){ if(lockedSet.has(o.i))continue;
+      for(const i of byPos[o.pt]){ if(used.has(i.i)||i.price>=o.price)continue; if(!(i.tid===o.tid||(club[i.tid]||0)<3))continue;
+        const saved=o.price-i.price, loss=Math.max(0,xpH(o)-xpH(i)), ratio=loss/saved;
+        if(!bs||ratio<bs.ratio||(ratio===bs.ratio&&saved>bs.saved)) bs={o,i,ratio,saved};
+      }}
+    if(!bs)break; swap(bs.o,bs.i);
+  }
+  if(cost>100.0001) return null;
+  // upgrade with slack to raise total xP
+  g=0;
+  while(g++<800){ const slack=100-cost; let bu=null;
+    for(const o of sel){ if(lockedSet.has(o.i))continue;
+      for(const i of byPos[o.pt]){ if(used.has(i.i)||i.price>o.price+slack)continue; if(!(i.tid===o.tid||(club[i.tid]||0)<3))continue;
+        const gain=xpH(i)-xpH(o); if(gain>0&&(!bu||gain>bu.gain)) bu={o,i,gain};
+      }}
+    if(!bu)break; swap(bu.o,bu.i);
+  }
+  // pick the best legal XI for display (cosmetic — all 15 score under BB)
+  const byP={1:[],2:[],3:[],4:[]}; sel.forEach(p=>byP[p.pt].push(p));
+  for(const k in byP) byP[k].sort((a,b)=>xpH(b)-xpH(a));
+  let bestXI=null;
+  for(const [D,M,F] of FORMS){
+    const xi=[byP[1][0],...byP[2].slice(0,D),...byP[3].slice(0,M),...byP[4].slice(0,F)];
+    if(xi.some(x=>!x))continue;
+    const s=xi.reduce((a,p)=>a+xpH(p),0);
+    if(!bestXI||s>bestXI.s) bestXI={xi,s,D,M,F};
+  }
+  if(!bestXI) return null;
+  const xiSet=new Set(bestXI.xi.map(p=>p.i));
+  const xiAll=bestXI.xi, benAll=sel.filter(p=>!xiSet.has(p.i));
+  const capP=sel.reduce((a,b)=>xpH(b)>xpH(a)?b:a,sel[0]);
+  const total=sel.reduce((a,p)=>a+xpH(p),0)+xpH(capP);   // all 15 + captain double
+  return {XI:xiAll.map(p=>p.i),BEN:benAll.map(p=>p.i),cap:capP.i,form:`${bestXI.D}-${bestXI.M}-${bestXI.F}`,cost:Math.round(cost*10)/10,score:Math.round(total*10)/10,bb:true};
+}
 function renderLocks(){
   document.getElementById('optlocks').innerHTML=optLocks.map(id=>{const p=byId[id];return `<span class="lockchip">${p.n} <span style="font-weight:400;color:#6a63c9">${p.tm}</span><button data-id="${id}">✕</button></span>`;}).join('');
   document.querySelectorAll('#optlocks button').forEach(b=>b.onclick=()=>{optLocks=optLocks.filter(x=>x!=b.dataset.id);renderLocks();renderOptimal();});
 }
 function renderOptimal(){
-  const o=solveOptimal(); const warn=document.getElementById('lockwarn');
+  const o=chip==='bb'?solveBenchBoost():solveOptimal(); const warn=document.getElementById('lockwarn');
   if(!o){warn.textContent='Those locks don’t fit a legal £100m XI together — remove one to continue.';
     document.getElementById('optkpis').innerHTML='';document.getElementById('optpitch').innerHTML='';document.getElementById('optbench').innerHTML='';return;}
   warn.textContent='';
   const bank=(100-o.cost).toFixed(1);
+  const gks=[...o.XI,...o.BEN].map(id=>byId[id]).filter(p=>p&&p.pt===1);
+  const gkSpend=gks.reduce((a,p)=>a+p.price,0);
   document.getElementById('optkpis').innerHTML=`
     <div class="kpi" style="text-align:left"><div class="v num">${o.form}</div><div class="l">Formation</div></div>
-    <div class="kpi" style="text-align:left"><div class="v num">${o.score.toFixed(1)}</div><div class="l">Proj pts · ${optH}GW</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num">${o.score.toFixed(1)}</div><div class="l">Proj pts · ${chip==='bb'?'BB (all 15)':optH+'GW'}</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num">${gkSpend.toFixed(1)}</div><div class="l">Keepers £m</div></div>
     <div class="kpi" style="text-align:left"><div class="v num">${o.cost.toFixed(1)}</div><div class="l">Squad £m</div></div>
     <div class="kpi" style="text-align:left"><div class="v num">${bank}</div><div class="l">Bank £m</div></div>`;
   const lockedSet=new Set(optLocks), groups={GK:[],DEF:[],MID:[],FWD:[]};
@@ -583,7 +643,7 @@ function renderOptimal(){
         <div class="cstat"><span>Rating</span><b><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></b></div></div>`;}).join('');
     return `<div class="line"><h4>${posName[pos]}</h4><div class="cards">${cards}</div></div>`;
   }).join('');
-  document.getElementById('optbench').innerHTML='<h4>Bench</h4><p>'+o.BEN.map(id=>{const p=byId[id];return `${p.n} <span style="color:var(--faint)">(${p.tm} ${p.pos} ${fmtM(p.price)})</span>`;}).join(' · ')+'</p>';
+  document.getElementById('optbench').innerHTML=`<h4>Bench${chip==='bb'?' · all four score on Bench Boost':''}</h4><p>`+o.BEN.map(id=>{const p=byId[id];return `${p.n} <span style="color:var(--faint)">(${p.tm} ${p.pos} ${fmtM(p.price)}${chip==='bb'?' · '+xpH(p).toFixed(1)+' xP':''})</span>`;}).join(' · ')+'</p>';
   const sug=DATA.suggestions[optH]||[];
   document.getElementById('opttransfers').innerHTML= sug.length ? '<table><thead><tr><th class="l">Out</th><th class="l">In</th><th class="l" style="padding-left:14px">In: next 3</th><th>+xP</th></tr></thead><tbody>'+
     sug.map(s=>{const a=byId[s.out],b=byId[s.in];return `<tr><td class="l"><span class="pname" style="color:var(--bad)">${a.n}</span><div class="pmeta">${a.tm} ${a.pos} ${fmtM(a.price)}</div></td><td class="l"><span class="pname" style="color:var(--good)">${b.n}</span> ${availFlag(b)}<div class="pmeta">${b.tm} ${b.pos} ${fmtM(b.price)}</div></td><td class="l">${fixCells(b.tm,3)}</td><td><span class="num up">+${s.delta.toFixed(1)}</span></td></tr>`;}).join('')+'</tbody></table>'
@@ -601,6 +661,7 @@ optSearch.oninput=()=>{const q=optSearch.value.toLowerCase().trim();
 };
 document.addEventListener('click',e=>{if(!e.target.closest('.lockbar'))optResults.classList.remove('on');});
 document.querySelectorAll('#opthorizon button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#opthorizon button').forEach(x=>x.classList.remove('on'));b.classList.add('on');optH=+b.dataset.h;renderOptimal();});
+document.querySelectorAll('#optchip button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#optchip button').forEach(x=>x.classList.remove('on'));b.classList.add('on');chip=b.dataset.c;renderOptimal();});
 renderLocks(); renderOptimal();
 
 /* Monte-Carlo simulator (next GW, odds-driven, team-correlated) */
