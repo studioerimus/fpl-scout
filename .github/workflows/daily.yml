@@ -2,7 +2,7 @@ name: FPL Scout daily refresh
 
 on:
   schedule:
-    - cron: '0 6 * * *'      # 06:00 UTC (~08:00 your time). Runs on GitHub's servers, laptop off.
+    - cron: '0 7 * * *'      # 07:00 UTC = 09:00 Bordeaux (CEST, summer). Runs on GitHub's servers, laptop off.
   workflow_dispatch: {}       # lets you run it manually from the Actions tab
   push:
     branches: [main]          # also run when code changes (its own daily commit is marked [skip ci])
