@@ -131,6 +131,7 @@
   <nav class="tabs">
     <button data-v="players" class="on">Players</button>
     <button data-v="team">My Team</button>
+    <button data-v="preseason">Preseason</button>
     <button data-v="targets">Targets</button>
     <button data-v="fixtures">Fixtures</button>
     <button data-v="optimal">Optimal XI</button>
@@ -165,6 +166,26 @@
     <p class="secn">Captain and vice marked. Rating, rolling xP and estimated effective ownership per player.</p>
     <div class="pitch" id="pitch"></div>
     <div class="insight" id="teaminsight"></div>
+  </section>
+
+  <section class="view" id="v-preseason">
+    <h3 class="sec">Preseason tracker</h3>
+    <p class="secn">What actually moves before GW1: fitness and injuries, who is in the predicted XI, set-piece duty, and the players with no minutes to judge on yet. Friendly goals are noise, so this reads the signal that matters — minutes and roles.</p>
+    <div class="insight" id="pre_squad" style="margin-top:0"></div>
+    <h3 class="sec" style="margin-top:22px">Availability watch</h3>
+    <p class="secn">Live from FPL: knocks, doubts and suspensions across the players worth caring about. Chance is FPL's stated odds of featuring next round.</p>
+    <div class="tblwrap" id="pre_avail"></div>
+    <div class="grid2" style="margin-top:20px">
+      <div><h3 class="sec">Set-piece duty</h3><p class="secn">Penalties first, then free-kicks and corners. Confirmed roles are nailed points.</p><div class="tblwrap" id="pre_sp"></div></div>
+      <div><h3 class="sec">Ownership momentum</h3><p class="secn">Where the crowd is moving as teams pick. The template forming.</p><div class="tblwrap" id="pre_mom"></div></div>
+    </div>
+    <h3 class="sec" style="margin-top:22px">Predicted XI risk</h3>
+    <p class="secn">Notable players currently outside their club's predicted lineup — the minutes doubts to track as friendlies sharpen roles.</p>
+    <div class="tblwrap" id="pre_xi"></div>
+    <h3 class="sec" style="margin-top:22px">No read yet — new &amp; unproven</h3>
+    <p class="secn">Priced up but zero Premier League minutes last season: new signings, promoted-club players and returnees. Their preseason minutes are the only evidence we have, which is exactly where the friendly feed plugs in.</p>
+    <div class="tblwrap" id="pre_new"></div>
+    <div class="legend" id="pre_note"></div>
   </section>
 
   <section class="view" id="v-targets">
@@ -651,8 +672,80 @@ function renderSim(){
 document.querySelectorAll('#simline button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#simline button').forEach(x=>x.classList.remove('on'));b.classList.add('on');simLine=b.dataset.l;renderSim();});
 let simInit=false;
 
+/* Preseason tracker */
+const INJ_HI=['OUT','SUS','INJ'], INJ_MD=['QUES','DBT'];
+function preFlag(p){
+  if(INJ_HI.includes(p.inj)) return `<span class="badge" style="background:#fbe6e6;color:#c0392b">${p.inj}</span>`;
+  if(INJ_MD.includes(p.inj)) return `<span class="badge" style="background:#fdf0d8;color:#a06a00">${p.inj==='DBT'?'DOUBT':'?'}</span>`;
+  return '';
+}
+const chanceStr=p=>(p.cop===null||p.cop===undefined)?'—':(p.cop+'%');
+let preInit=false;
+function renderPreseason(){
+  /* A) your squad check */
+  const sq=DATA.squad.map(id=>byId[id]);
+  const issues=sq.filter(p=>INJ_HI.includes(p.inj)||INJ_MD.includes(p.inj)||p.pstart===false);
+  let sc;
+  if(issues.length){
+    sc='<h4>Your squad — worth a look</h4>'+issues.map(p=>{
+      const why=INJ_HI.includes(p.inj)?`<b style="color:var(--bad)">${p.inj}</b>${p.news?' — '+p.news:''}`
+        :INJ_MD.includes(p.inj)?`<b style="color:#a06a00">doubt</b>${p.news?' — '+p.news:''}`
+        :`<b>predicted to be benched</b>`;
+      return `<p><b>${p.n}</b> <span style="color:var(--faint)">${p.tm} ${p.pos}</span> — ${why}</p>`;
+    }).join('');
+  } else {
+    sc='<h4>Your squad — all clear</h4><p>No injuries, doubts or predicted benchings across your 15 right now. Nothing to action before the deadline.</p>';
+  }
+  document.getElementById('pre_squad').innerHTML=sc;
+
+  /* B) availability watch */
+  const sev=p=>INJ_HI.includes(p.inj)?0:1;
+  const avail=DATA.players.filter(p=>(INJ_HI.includes(p.inj)||INJ_MD.includes(p.inj))&&(p.own>=1||p.vr>=6.5||mineSet.has(p.i)))
+    .sort((a,b)=>sev(a)-sev(b)||b.own-a.own);
+  document.getElementById('pre_avail').innerHTML = avail.length ?
+    '<table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>£</th><th>Own%</th><th class="l" style="padding-left:12px">Status</th><th>Chance</th><th class="l" style="padding-left:12px">News</th></tr></thead><tbody>'+
+    avail.slice(0,40).map(p=>`<tr><td class="l"><span class="pname">${p.n}</span> ${mineSet.has(p.i)?'<span class="badge">MINE</span>':''}<div class="pmeta">${p.tm}</div></td><td class="l"><span class="pos-pill">${p.pos}</span></td><td>${N(p.price)}</td><td>${N(p.own)}</td><td class="l" style="padding-left:12px">${preFlag(p)}</td><td>${chanceStr(p)}</td><td class="l" style="padding-left:12px;white-space:normal;max-width:340px;color:var(--muted);font-size:12px">${p.news||'—'}</td></tr>`).join('')+'</tbody></table>'
+    : '<div style="padding:16px;color:var(--muted)">No injury or availability flags on notable players right now.</div>';
+
+  /* D) set-piece duty */
+  const pens=DATA.players.filter(p=>p.pen===1).sort((a,b)=>b.vr-a.vr).slice(0,10);
+  document.getElementById('pre_sp').innerHTML = pens.length ?
+    '<table><thead><tr><th class="l">On duty</th><th class="l">Role</th><th>£</th><th>Rating</th></tr></thead><tbody>'+
+    pens.map(p=>{const roles=['PEN']; if(p.fk&&p.fk<=2)roles.push('FK'); if(p.ck&&p.ck<=2)roles.push('CK'); return `<tr><td class="l"><span class="pname">${p.n}</span><div class="pmeta">${p.tm} ${p.pos}</div></td><td class="l">${roles.join(' · ')}</td><td>${N(p.price)}</td><td><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></td></tr>`;}).join('')+'</tbody></table>'
+    : '<div style="padding:16px;color:var(--muted)">Set-piece orders populate from FPL.</div>';
+
+  /* E) ownership momentum */
+  const mom=DATA.players.filter(p=>Math.abs(p.net||0)>=1000).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net)).slice(0,10);
+  document.getElementById('pre_mom').innerHTML = mom.length ?
+    '<table><thead><tr><th class="l">Player</th><th>Own%</th><th class="l" style="padding-left:12px">Trend</th></tr></thead><tbody>'+
+    mom.map(p=>`<tr><td class="l"><span class="pname">${p.n}</span><div class="pmeta">${p.tm} ${p.pos}</div></td><td>${N(p.own)}</td><td class="l" style="padding-left:12px">${momCell(p)}</td></tr>`).join('')+'</tbody></table>'
+    : '<div style="padding:16px;color:var(--muted)">Transfer momentum builds once the game opens. Big ownership shifts show here.</div>';
+
+  /* C) predicted XI risk */
+  const haveLU=DATA.meta.lineups;
+  const risk=DATA.players.filter(p=>p.pstart===false&&(p.own>=5||p.vr>=7||mineSet.has(p.i))).sort((a,b)=>b.vr-a.vr).slice(0,20);
+  document.getElementById('pre_xi').innerHTML = !haveLU ? '<div style="padding:16px;color:var(--muted)">Predicted XIs populate from Rotowire as they post them, closer to each kickoff.</div>'
+    : risk.length ? '<table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>£</th><th>Own%</th><th>Rating</th><th class="l" style="padding-left:12px">Note</th></tr></thead><tbody>'+
+      risk.map(p=>`<tr><td class="l"><span class="pname">${p.n}</span> ${mineSet.has(p.i)?'<span class="badge">MINE</span>':''}<div class="pmeta">${p.tm}</div></td><td class="l"><span class="pos-pill">${p.pos}</span></td><td>${N(p.price)}</td><td>${N(p.own)}</td><td><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></td><td class="l" style="padding-left:12px;color:var(--muted);font-size:12px">Outside predicted XI</td></tr>`).join('')+'</tbody></table>'
+      : '<div style="padding:16px;color:var(--muted)">Every notable player is currently in their predicted XI.</div>';
+
+  /* F) new / unproven — friendly columns light up when the feed is wired */
+  const hasFr=DATA.players.some(p=>p.fmin!=null);
+  const frHead=hasFr?'<th>Fr min</th><th>Fr G</th><th>Fr A</th>':'';
+  const frCells=p=>hasFr?`<td>${p.fmin??'—'}</td><td>${p.fg??0}</td><td>${p.fa??0}</td>`:'';
+  const neu=DATA.players.filter(p=>p.min===0&&p.price>=5.5).sort((a,b)=>b.price-a.price);
+  document.getElementById('pre_new').innerHTML = neu.length ?
+    '<table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>£</th><th>Own%</th><th class="l" style="padding-left:12px">Predicted</th>'+frHead+'</tr></thead><tbody>'+
+    neu.slice(0,30).map(p=>{const pr=p.pstart===true?'<span class="badge p">XI</span>':p.pstart===false?'<span class="badge" style="background:#eceef0;color:#8a9098">bench</span>':'<span style="color:var(--faint)">—</span>'; return `<tr><td class="l"><span class="pname">${p.n}</span> ${mineSet.has(p.i)?'<span class="badge">MINE</span>':''} ${preFlag(p)}<div class="pmeta">${p.tm}</div></td><td class="l"><span class="pos-pill">${p.pos}</span></td><td>${N(p.price)}</td><td>${N(p.own)}</td><td class="l" style="padding-left:12px">${pr}</td>${frCells(p)}</tr>`;}).join('')+'</tbody></table>'
+    : '<div style="padding:16px;color:var(--muted)">No priced-up players without minutes to flag.</div>';
+
+  document.getElementById('pre_note').innerHTML = hasFr
+    ? '<span style="color:var(--faint)">Friendly minutes, goals and assists are live. Minutes feed nailedness; goals are context only, not projection inputs.</span>'
+    : '<span style="color:var(--faint)">Friendly minutes, goals and assists will appear here once the friendly feed is wired. Until then the tracker reads FPL fitness, Rotowire predicted XIs and set-piece duty.</span>';
+}
+
 /* Tabs */
-document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');if(b.dataset.v==='sim'&&!simInit){simInit=true;renderSim();}});
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');if(b.dataset.v==='sim'&&!simInit){simInit=true;renderSim();}if(b.dataset.v==='preseason'&&!preInit){preInit=true;renderPreseason();}});
 
 headRow(); render();
 </script>
