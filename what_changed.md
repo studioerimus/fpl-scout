@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW1 · rebuilt 27 Jul 13:47 UTC
+GW1 · rebuilt 28 Jul 09:29 UTC
 
-- 🔻 **Hincapie** rating 6.6 → 4.7.
+- Nothing decision-relevant changed since yesterday.
