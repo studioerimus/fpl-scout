@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW1 · rebuilt 29 Jul 09:31 UTC
+GW1 · rebuilt 30 Jul 09:24 UTC
 
-- ⚠️ **Bassette** now OUT — was fine yesterday.
+- Nothing decision-relevant changed since yesterday.
