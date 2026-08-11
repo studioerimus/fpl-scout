@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW1 · rebuilt 10 Aug 08:19 UTC
+GW1 · rebuilt 11 Aug 08:00 UTC
 
 - Nothing decision-relevant changed since yesterday.
