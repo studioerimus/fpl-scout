@@ -6,5 +6,6 @@
   "lineups": "refreshed 20 teams",
   "odds_key_present": true,
   "odds": "the-odds-api 10 matches",
-  "ts": "2026-08-18 09:59 UTC"
+  "fpl_cors": "absent",
+  "ts": "2026-08-18 10:03 UTC"
 }
