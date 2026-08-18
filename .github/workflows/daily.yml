@@ -1,14 +1,18 @@
-name: FPL Scout daily refresh
+name: FPL Scout refresh
 
 on:
   schedule:
-    - cron: '0 7 * * *'      # 07:00 UTC = 09:00 Bordeaux (CEST, summer). Runs on GitHub's servers, laptop off.
+    - cron: '0 * * * *'       # hourly check; decide_run.py keeps it cheap unless there's work to do
   workflow_dispatch: {}       # lets you run it manually from the Actions tab
   push:
-    branches: [main]          # also run when code changes (its own daily commit is marked [skip ci])
+    branches: [main]          # also run when code changes (its own commits are marked [skip ci])
 
 permissions:
   contents: write             # so it can commit the rebuilt dashboard
+
+concurrency:                  # never let two runs fight over the same commit
+  group: scout-refresh
+  cancel-in-progress: false
 
 jobs:
   refresh:
@@ -18,23 +22,41 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Decide what this run needs to do
+        id: mode
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: python decide_run.py
+
       - name: Install deps
+        if: steps.mode.outputs.mode != 'skip'
         run: |
           pip install pulp playwright
           python -m playwright install --with-deps chromium
+
       - name: Provide odds API key to the run (optional secret)
+        if: steps.mode.outputs.mode != 'skip'
         run: echo "ODDS_API_KEY=${{ secrets.ODDS_API_KEY }}" >> $GITHUB_ENV
+
       - name: Fetch FPL + rebuild dashboard
+        if: steps.mode.outputs.mode != 'skip'
+        env:
+          RUN_MODE: ${{ steps.mode.outputs.mode }}
         run: python cloud_refresh.py
+
       - name: Commit the fresh dashboard
+        if: steps.mode.outputs.mode != 'skip'
         run: |
           git config user.name  "fpl-scout-bot"
           git config user.email "bot@users.noreply.github.com"
           git add -A
-          git commit -m "Daily refresh $(date -u +%Y-%m-%d) [skip ci]" || echo "nothing changed"
+          git commit -m "Scout ${{ steps.mode.outputs.mode }} $(date -u +'%Y-%m-%d %H:%M') [skip ci]" || echo "nothing changed"
+          git pull --rebase --autostash origin main || true
           git push
+
       - name: Email it to you (optional — only runs if you add the two mail secrets)
-        if: ${{ env.MAIL_USERNAME != '' }}
+        if: ${{ steps.mode.outputs.mode != 'skip' && env.MAIL_USERNAME != '' }}
         continue-on-error: true
         env:
           MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
@@ -45,7 +67,7 @@ jobs:
           secure: true
           username: ${{ secrets.MAIL_USERNAME }}
           password: ${{ secrets.MAIL_PASSWORD }}
-          subject: "FPL Scout — daily refresh"
+          subject: "FPL Scout — refresh"
           to: jack@erimus.studio
           from: FPL Scout
           html_body: file://what_changed.md
