@@ -142,6 +142,22 @@
   .pc .flag{position:absolute;right:5px;top:19px;font-size:8px;background:rgba(255,255,255,.95);border-radius:3px;padding:0 3px;font-weight:700;font-family:var(--disp)}
   .benchstrip{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-top:10px}
   .benchstrip h5{font-family:var(--disp);font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);margin:0 0 9px}
+
+  .rtcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:14px}
+  .rt-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:12px}
+  .rt-num{font-family:var(--disp);font-weight:700;font-size:38px;line-height:1}
+  .rt-band{font-family:var(--disp);font-size:12px;font-weight:600;margin-top:2px}
+  .rt-scaleinfo{text-align:right;font-size:12px;color:var(--muted);line-height:1.5}
+  .rt-rows{display:flex;flex-direction:column;gap:6px}
+  .rt-row{display:grid;grid-template-columns:132px 1fr 30px minmax(0,1.5fr);align-items:center;gap:10px}
+  @media(max-width:760px){.rt-row{grid-template-columns:110px 1fr 28px}.rt-note{display:none}}
+  .rt-lbl{font-size:12.5px;color:var(--ink)}
+  .rt-bar{height:7px;background:var(--line2);border-radius:4px;overflow:hidden}
+  .rt-fill{display:block;height:100%;background:var(--accent);border-radius:4px}
+  .rt-val{font-size:12.5px;font-weight:600;text-align:right}
+  .rt-note{font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rt-gap{margin-top:11px;padding-top:10px;border-top:1px solid var(--line2);font-size:12.5px;color:var(--muted)}
+  .rt-gap b{color:var(--ink)}
   .foot{color:var(--faint);font-size:11.5px;margin-top:26px;border-top:1px solid var(--line);padding-top:14px}
   .toprow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
   .toprow .sp{margin-left:auto}
@@ -237,6 +253,11 @@
       <p class="secn">Captain and vice marked, laid out in your formation. Bench in order underneath.</p></div>
       <div class="viewtog" id="teamviewtog" style="margin-bottom:14px"><button data-w="pitch" class="on">Pitch</button><button data-w="list">List</button></div>
     </div>
+    <div style="display:flex;align-items:center;gap:8px;margin:4px 0 10px">
+      <span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Rated over</span>
+      <div class="seg" id="ratewin"><button data-w="1">GW1</button><button data-w="3" class="on">3 GW</button><button data-w="6">6 GW</button></div>
+    </div>
+    <div id="teamrating"></div>
     <div id="syncnote"></div>
     <div class="controls" style="margin:12px 0">
       <button class="act" id="btnedit">Edit my team</button>
@@ -364,6 +385,7 @@
       <div class="optlocks" id="optexcl"></div>
       <div class="lockwarn" id="lockwarn"></div>
     </div>
+    <div id="optrating"></div>
     <div class="kpis" id="optkpis" style="justify-content:flex-start;gap:26px;margin-bottom:16px"></div>
     <div class="pitch" id="optpitch"></div>
     <div class="insight" id="optbench" style="border-left-color:var(--faint)"></div>
@@ -581,8 +603,11 @@ function squadListHTML(ids,startSet,capId,viceId,valFn,statLbl){
 }
 
 /* My Team */
+let rateW=3;
 function renderTeam(){
   const e=CUR(), startSet=new Set(e.starting);
+  try{ document.getElementById('teamrating').innerHTML=ratingHTML(e.squad,rateW,'Your squad'); }
+  catch(err){ document.getElementById('teamrating').innerHTML=''; console.warn('rating',err); }
   const xi=e.starting.filter(id=>byId[id]);
   const bench=e.squad.filter(id=>!startSet.has(id)&&byId[id]);
   const valFn=p=>rollXP(p,3);
@@ -600,6 +625,9 @@ function renderTeam(){
   if(weak) notes.push(`<b>Weakest link.</b> ${weak.n} is your lowest-rated starter at ${weak.vr.toFixed(1)}; the Optimal tab and transfer list below show the best upgrades.`);
   document.getElementById('teaminsight').innerHTML='<h4>Reading the room</h4>'+notes.map(n=>`<p>${n}</p>`).join('');
 }
+document.querySelectorAll('#ratewin button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#ratewin button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); rateW=+b.dataset.w; renderTeam(); renderOptimal();});
 document.querySelectorAll('#teamviewtog button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#teamviewtog button').forEach(x=>x.classList.remove('on'));
   b.classList.add('on'); teamView=b.dataset.w; renderTeam();});
@@ -845,6 +873,8 @@ function renderOptimal(){
   if(!o){warn.textContent=(optExcl.length?'No legal £100m squad with those locks and exclusions — loosen one to continue.':'Those locks don’t fit a legal £100m XI together — remove one to continue.');
     document.getElementById('optkpis').innerHTML='';document.getElementById('optpitch').innerHTML='';document.getElementById('optbench').innerHTML='';return;}
   warn.textContent='';
+  try{ document.getElementById('optrating').innerHTML=ratingHTML([...o.XI,...o.BEN],rateW,'Optimiser squad'); }
+  catch(err){ document.getElementById('optrating').innerHTML=''; console.warn('rating',err); }
   const bank=(100-o.cost).toFixed(1);
   const gks=[...o.XI,...o.BEN].map(id=>byId[id]).filter(p=>p&&p.pt===1);
   const gkSpend=gks.reduce((a,p)=>a+p.price,0);
@@ -1497,6 +1527,144 @@ function renderAccuracy(){
     <div class="tblwrap"><table><thead><tr><th class="l">GW</th><th>Avg error</th><th>Projected</th><th>Actual</th><th>Your XI proj</th><th>Your XI got</th><th class="l" style="padding-left:12px">Captain</th></tr></thead><tbody>${gwRows}</tbody></table></div>`;
 }
 
+/* ---------- Squad rating ----------
+   A score is only meaningful if the scale is anchored to something real, so this
+   one is pinned to two reference squads rebuilt from the same projections:
+     50  = the template (what the crowd owns) — you'd do about as well as the field
+     100 = the optimiser's best legal £100m squad — nothing could do better
+   Below the template it scales on down toward a replacement-level squad. The
+   sub-scores are what actually make it useful: the number says how you're doing,
+   the breakdown says where the points are leaking. */
+let _tmplSquad=null, _ratingCache={};
+function templateSquad(){
+  if(_tmplSquad) return _tmplSquad;
+  const need={1:2,2:5,3:5,4:3}, cnt={1:0,2:0,3:0,4:0}, club={};
+  const pool=DATA.players.filter(p=>p.xpg&&p.own>0).slice().sort((a,b)=>b.own-a.own);
+  const sel=[]; let cost=0;
+  const left=()=>[1,2,3,4].reduce((a,k)=>a+(need[k]-cnt[k]),0);
+  for(const p of pool){
+    if(cnt[p.pt]>=need[p.pt]||(club[p.tm]||0)>=3) continue;
+    if(cost+p.price+(left()-1)*4.0>100.0001) continue;         // keep enough back to fill the rest
+    sel.push(p); cnt[p.pt]++; club[p.tm]=(club[p.tm]||0)+1; cost+=p.price;
+    if(left()===0) break;
+  }
+  // Fill any remaining slots, freeing budget if the greedy pass overspent.
+  const cheap=DATA.players.filter(p=>p.xpg).slice().sort((a,b)=>a.price-b.price);
+  const has=id=>sel.some(x=>x.i===id);
+  let guard=0;
+  while(left()>0 && guard++<200){
+    const slot=[1,2,3,4].find(k=>cnt[k]<need[k]);
+    const pick=cheap.find(p=>p.pt===slot && !has(p.i) && (club[p.tm]||0)<3 && cost+p.price<=100.0001);
+    if(pick){ sel.push(pick); cnt[pick.pt]++; club[pick.tm]=(club[pick.tm]||0)+1; cost+=pick.price; continue; }
+    // can't afford the slot: downgrade the priciest pick that has a cheaper alternative
+    const sorted=[...sel].sort((a,b)=>b.price-a.price);
+    let swapped=false;
+    for(const o of sorted){
+      const alt=cheap.find(p=>p.pt===o.pt && !has(p.i) && p.price<o.price && (p.tm===o.tm||(club[p.tm]||0)<3));
+      if(alt){ sel.splice(sel.indexOf(o),1); club[o.tm]--; cost-=o.price;
+               sel.push(alt); club[alt.tm]=(club[alt.tm]||0)+1; cost+=alt.price; swapped=true; break; }
+    }
+    if(!swapped) break;
+  }
+  _tmplSquad=sel.map(p=>p.i);
+  return _tmplSquad;
+}
+function squadPts(ids,w){ let t=0; for(let k=0;k<w;k++) t+=bestXI(ids,k).pts; return t; }
+function benchPts(ids,w){
+  let t=0;
+  for(let k=0;k<w;k++){ const xi=new Set(bestXI(ids,k).xi.map(p=>p.i));
+    t+=ids.map(i=>byId[i]).filter(p=>p&&!xi.has(p.i)).reduce((a,p)=>a+xg1(p,k),0); }
+  return t;
+}
+function scale(v,lo,hi){ return Math.max(0,Math.min(100,100*(v-lo)/((hi-lo)||1))); }
+
+function rateSquad(ids,w){
+  const key=ids.join(',')+'|'+w;
+  if(_ratingCache[key]) return _ratingCache[key];
+  const opt=solveWith([0,w-1],()=>solveOptimal());
+  const optIds=opt?[...opt.XI,...opt.BEN]:ids;
+  const tmpl=templateSquad();
+  const mine=squadPts(ids,w), ceil=squadPts(optIds,w), tmp=squadPts(tmpl,w);
+  const ps=ids.map(i=>byId[i]).filter(Boolean);
+
+  // 1. points — the core. template sits at 50, the optimiser at 100
+  const ptsScore = mine>=tmp ? 50+50*((mine-tmp)/((ceil-tmp)||1)) : 50*(mine/(tmp||1));
+
+  // 2. minutes security — weighted by how much each player matters to you
+  const xiNow=bestXI(ids,0).xi;
+  const wsum=xiNow.reduce((a,p)=>a+xg1(p,0),0)||1;
+  const secure=xiNow.reduce((a,p)=>a+(p.mp||0)*xg1(p,0),0)/wsum;
+  const secScore=scale(secure,0.70,0.97);
+
+  // 3. fixtures over the window, read through your own starters
+  const fdrOf=p=>{const r=(DATA.teams[p.tm]&&DATA.teams[p.tm].runs)||[];
+    const win=r.slice(0,w); return win.length?win.reduce((a,x)=>a+x.d,0)/win.length:3;};
+  const meanFdr=xiNow.length?xiNow.reduce((a,p)=>a+fdrOf(p),0)/xiNow.length:3;
+  const fixScore=scale(4.2-meanFdr,0.7,1.7);
+
+  // 4. value — points per £m against what the optimiser squeezes out
+  const cost=ps.reduce((a,p)=>a+p.price,0)||100;
+  const optCost=optIds.map(i=>byId[i]).filter(Boolean).reduce((a,p)=>a+p.price,0)||100;
+  const valScore=scale((mine/cost)/((ceil/optCost)||1),0.62,1.0);
+
+  // 5. bench — dead weight in normal weeks, the whole point on a Bench Boost
+  const bMine=benchPts(ids,w), bCeil=benchPts(optIds,w)||1;
+  const benchScore=scale(bMine/bCeil,0.25,1.15);
+
+  // 6. shape — money working in the XI, and whether the bench can actually cover
+  const xiSet=new Set(xiNow.map(p=>p.i));
+  const xiCost=ps.filter(p=>xiSet.has(p.i)).reduce((a,p)=>a+p.price,0);
+  const working=xiCost/cost;
+  const playable=ps.filter(p=>!xiSet.has(p.i)&&p.pt!==1&&(p.mp||0)>=0.45).length;
+  const shapeScore=0.65*scale(working,0.74,0.90)+0.35*scale(playable,0,3);
+
+  const parts=[
+    {k:'pts',  label:'Projected points', score:ptsScore,   weight:.45, note:`${mine.toFixed(0)} vs ${ceil.toFixed(0)} best, ${tmp.toFixed(0)} template`},
+    {k:'sec',  label:'Minutes security', score:secScore,   weight:.15, note:`${Math.round(secure*100)}% of your points come from nailed starters`},
+    {k:'fix',  label:'Fixtures',         score:fixScore,   weight:.12, note:`average difficulty ${meanFdr.toFixed(2)} over ${w} week${w>1?'s':''}`},
+    {k:'val',  label:'Value efficiency', score:valScore,   weight:.10, note:`${(mine/cost).toFixed(2)} pts per £m spent`},
+    {k:'bench',label:'Bench strength',   score:benchScore, weight:.10, note:`bench projects ${bMine.toFixed(0)} pts over the window`},
+    {k:'shape',label:'Squad shape',      score:shapeScore, weight:.08, note:`${Math.round(working*100)}% of value in the XI · ${playable} playable subs`},
+  ];
+  const overall=parts.reduce((a,p)=>a+p.score*p.weight,0);
+
+  // where the points actually leak, by position
+  const byPos=t=>{const o={GK:0,DEF:0,MID:0,FWD:0};
+    for(let k=0;k<w;k++) bestXI(t,k).xi.forEach(p=>o[p.pos]+=xg1(p,k)); return o;};
+  const a=byPos(ids), b=byPos(optIds);
+  const gaps=['GK','DEF','MID','FWD'].map(x=>({pos:x,gap:b[x]-a[x]})).sort((x,y)=>y.gap-x.gap);
+
+  const out={overall,parts,gaps,mine,ceil,tmp,w};
+  _ratingCache[key]=out; return out;
+}
+function tmplScore(w){ return rateSquad(templateSquad(),w).overall; }
+function optScore(w){ const o=solveWith([0,w-1],()=>solveOptimal()); return o?rateSquad([...o.XI,...o.BEN],w).overall:100; }
+function ratingBand(v){
+  return v>=86?['Near optimal','#1f9d63']:v>=74?['Strong','#1f9d63']:v>=64?['Solid','#eda100']
+        :v>=52?['Around the template','#eda100']:['Behind the field','#e05650'];
+}
+function ratingHTML(ids,w,title){
+  const r=rateSquad(ids,w), [band,col]=ratingBand(r.overall);
+  const bars=r.parts.map(p=>`<div class="rt-row">
+      <span class="rt-lbl">${p.label}</span>
+      <span class="rt-bar"><span class="rt-fill" style="width:${Math.max(2,p.score).toFixed(0)}%"></span></span>
+      <span class="rt-val num">${p.score.toFixed(0)}</span>
+      <span class="rt-note">${p.note}</span></div>`).join('');
+  const lead=r.gaps[0];
+  const gapTxt=lead&&lead.gap>0.5
+    ? `Most of the gap is in <b>${lead.pos==='GK'?'goal':lead.pos==='DEF'?'defence':lead.pos==='MID'?'midfield':'attack'}</b>, worth about <b>${lead.gap.toFixed(1)} pts</b> over ${w} week${w>1?'s':''}.`
+    : `No single area is dragging you down.`;
+  return `<div class="rtcard">
+    <div class="rt-head">
+      <div><div class="rt-num" style="color:${col}">${r.overall.toFixed(0)}<span style="font-size:15px;color:var(--faint);font-weight:500">/100</span></div>
+        <div class="rt-band" style="color:${col}">${band}</div></div>
+      <div class="rt-scaleinfo">${title}<br><span style="color:var(--faint)">the crowd's template squad scores <b style="color:var(--muted)">${tmplScore(w).toFixed(0)}</b> · the optimiser's best scores <b style="color:var(--muted)">${optScore(w).toFixed(0)}</b></span></div>
+    </div>
+    <div class="rt-rows">${bars}</div>
+    <div class="rt-gap">${gapTxt}</div>
+  </div>`;
+}
+
 /* ---------- Mini-league ---------- */
 let lgInit=false, lgIdx=0;
 function renderLeague(){
@@ -1573,6 +1741,7 @@ function renderLeague(){
 document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');if(b.dataset.v==='sim'&&!simInit){simInit=true;renderSim();}if(b.dataset.v==='compare'&&!cmpInit){cmpInit=true;renderCmpChips();renderRadar();}if(b.dataset.v==='planner'&&!planInit){planInit=true;renderPlanner();}if(b.dataset.v==='accuracy'&&!accInit){accInit=true;renderAccuracy();}if(b.dataset.v==='league'&&!lgInit){lgInit=true;renderLeague();}});
 
 headRow(); render();
+try{ renderTeam(); }catch(e){ console.warn('rating render',e); }
 </script>
 </body>
 </html>
