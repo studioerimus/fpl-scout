@@ -116,6 +116,30 @@
   .lockchip{display:inline-flex;align-items:center;gap:7px;background:var(--accent-soft);color:#4a3fc7;border-radius:999px;padding:4px 5px 4px 12px;font-size:12.5px;font-weight:600}
   .lockchip button{border:none;background:#d9d5f5;color:#4a3fc7;border-radius:50%;width:17px;height:17px;cursor:pointer;font-size:11px;line-height:1;padding:0}
   .lockwarn{color:var(--bad);font-size:12.5px;margin-top:8px}
+
+  /* pitch view */
+  .viewtog{display:inline-flex;background:var(--line2);border-radius:8px;padding:3px}
+  .viewtog button{appearance:none;border:none;background:none;font-family:var(--body);font-weight:500;font-size:12.5px;color:var(--muted);padding:5px 12px;border-radius:6px;cursor:pointer}
+  .viewtog button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+  .pitch2{background:linear-gradient(170deg,#1c7a4b,#14603a);border-radius:14px;padding:16px 10px 10px;position:relative;overflow:hidden}
+  .pitch2::before{content:"";position:absolute;inset:0;background:
+     repeating-linear-gradient(180deg,rgba(255,255,255,.045) 0 46px,transparent 46px 92px);pointer-events:none}
+  .pitch2 .rowlbl{color:rgba(255,255,255,.62);font-family:var(--disp);font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;text-align:center;margin:0 0 6px}
+  .prow{display:flex;justify-content:center;gap:9px;margin-bottom:13px;flex-wrap:wrap;position:relative}
+  .pc{width:126px;background:var(--panel);border-radius:9px;padding:7px 8px 8px;position:relative;box-shadow:0 2px 7px rgba(0,0,0,.20)}
+  .pc .acc{height:3px;border-radius:9px 9px 0 0;position:absolute;left:0;right:0;top:0}
+  .pc .pn{font-weight:600;font-size:12.5px;line-height:1.2;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pc .pm{color:var(--faint);font-size:10.5px;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;height:15px}
+  .pc .pstats{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:11px;color:var(--muted)}
+  .pc .pstats b{font-family:var(--disp);color:var(--ink)}
+  .pc .arm2{position:absolute;top:-6px;right:-6px;font-family:var(--disp);font-weight:700;font-size:10px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .pc .arm2.v{background:#6a7079}
+  .pc.dim{opacity:.55}
+  .benchstrip{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-top:10px}
+  .benchstrip h5{font-family:var(--disp);font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);margin:0 0 9px}
+  .pc .fixmini{display:flex;gap:2px;margin-top:5px}
+  .pc .fixmini .fcell{min-width:0;flex:1;font-size:9px;padding:2px 1px}
+  .pc .fixmini .fcell small{font-size:7px}
   .foot{color:var(--faint);font-size:11.5px;margin-top:26px;border-top:1px solid var(--line);padding-top:14px}
   .toprow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
   .toprow .sp{margin-left:auto}
@@ -175,6 +199,7 @@
     <button data-v="planner">Planner</button>
     <button data-v="compare">Compare</button>
     <button data-v="targets">Targets</button>
+    <button data-v="league">Mini-league</button>
     <button data-v="accuracy">Accuracy</button>
     <button data-v="fixtures">Fixtures</button>
     <button data-v="optimal">Optimal XI</button>
@@ -205,8 +230,11 @@
   </section>
 
   <section class="view" id="v-team">
-    <h3 class="sec">Your XV</h3>
-    <p class="secn">Captain and vice marked. Rating, rolling xP and estimated effective ownership per player.</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+      <div><h3 class="sec">Your XV</h3>
+      <p class="secn">Captain and vice marked, laid out in your formation. Bench in order underneath.</p></div>
+      <div class="viewtog" id="teamviewtog" style="margin-bottom:14px"><button data-w="pitch" class="on">Pitch</button><button data-w="list">List</button></div>
+    </div>
     <div id="syncnote"></div>
     <div class="controls" style="margin:12px 0">
       <button class="act" id="btnedit">Edit my team</button>
@@ -227,6 +255,7 @@
     <h3 class="sec">Transfer planner</h3>
     <p class="secn">Plan the next six gameweeks. Stage transfers on the week you'd make them, and the projection, budget, free transfers and hits all update. Nothing here touches your real team — it's a sandbox.</p>
     <div class="gwstrip" id="plangw"></div>
+    <div id="planchips"></div>
     <div class="kpis" id="plankpis" style="justify-content:flex-start;gap:26px;margin-bottom:8px"></div>
     <div class="lockwarn" id="planwarn"></div>
     <div class="grid2" style="margin-top:6px">
@@ -261,6 +290,15 @@
     <div class="tblwrap" id="cmptable"></div>
   </section>
 
+  <section class="view" id="v-league">
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+      <div><h3 class="sec">Mini-league</h3>
+      <p class="secn">Winning your league is a different problem to scoring points. What matters is where you differ from the people you're chasing, so this reads ownership inside the league rather than across the whole game.</p></div>
+      <select class="fsel" id="lgsel" style="margin-bottom:14px"></select>
+    </div>
+    <div id="lgbody"></div>
+  </section>
+
   <section class="view" id="v-accuracy">
     <h3 class="sec">Model accuracy</h3>
     <p class="secn">Every gameweek's projections are sealed before the deadline, then scored once results land. Sealing first matters: judged after teams are announced, any model looks better than it is. What it learns here feeds back into the projections automatically.</p>
@@ -291,8 +329,11 @@
         <option value="teamopp" selected>Team + opponent</option>
         <option value="dual">Dual 50 / 50</option>
       </select>
-      <span class="lbl" style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-left:6px">Next</span>
-      <div class="seg" id="frange"><button data-r="3">3</button><button data-r="5" class="on">5</button><button data-r="8">8</button></div>
+      <span class="lbl" style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-left:6px">Gameweeks</span>
+      <select class="fsel" id="fromgw"></select>
+      <span style="color:var(--faint);font-size:12px">to</span>
+      <select class="fsel" id="togw"></select>
+      <button class="minibtn" id="fresetrange">Next 6</button>
       <button class="minibtn" id="fedit" style="margin-left:auto">Edit ratings ▾</button>
     </div>
     <div class="fgrid" id="fgrid" style="display:none"></div>
@@ -310,6 +351,7 @@
         <div class="seg" id="opthorizon"><button data-h="1">1</button><button data-h="2">2</button><button data-h="3" class="on">3</button><button data-h="4">4</button><button data-h="5">5</button><button data-h="6">6</button></div></div>
         <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Chip</span>
         <div class="seg" id="optchip"><button data-c="none" class="on">None</button><button data-c="bb">Bench Boost</button></div></div>
+        <div class="viewtog" id="optviewtog"><button data-w="pitch" class="on">Pitch</button><button data-w="list">List</button></div>
       </div>
     </div>
     <div class="lockbar">
@@ -403,6 +445,12 @@ const COL={
   xgc90:{t:'xGC/90',sort:p=>p.xgc90,cell:p=>N(p.xgc90,2)},
   sv90:{t:'Sav/90',sort:p=>p.sv90,cell:p=>N(p.sv90,2)},
   net:{t:'Trend',sort:p=>p.net,cell:momCell},
+  vel:{t:'Flow',sort:p=>((DATA.velocity||{})[p.i]||{}).delta||0,cell:p=>{
+    const v=(DATA.velocity||{})[p.i];
+    if(!v||!v.delta) return '<span class="num" style="color:var(--faint)">–</span>';
+    const k=Math.abs(v.delta)>=1000?(Math.abs(v.delta)/1000).toFixed(0)+'k':Math.abs(v.delta);
+    const t=v.price_moved?` · moved ${v.price_moved>0?'+':''}${v.price_moved}m`:'';
+    return `<span class="num ${v.delta>0?'up':'down'}" title="net transfers since ${(v.from||'').slice(5,16)}${t}">${v.delta>0?'▲':'▼'}${k}</span>`;}},
   cc: {t:'Δ£',sort:p=>p.cc,cell:ccCell},
   pts:{t:'Pts',sort:p=>p.pts,cell:p=>N(p.pts,0)},
   vr: {t:'Rating',sort:p=>p.vr,cell:p=>`<span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span>`},
@@ -412,7 +460,7 @@ const LENS={
   attack:['xgi90','xgd','thr','crea','ep'],
   underlying:['npxg90','xa90','ga90','cbrit90','mp'],
   defence:['dc90','cs90','xgc90','sv90'],
-  value:['ppm','net','cc','own'],
+  value:['ppm','net','vel','cc','own'],
   own:['own','eo','net'],
 };
 let lens='overview', sortK='vr', sortDir=-1, posF='all', q='', nailedOnly=false, mineOnly=false;
@@ -476,23 +524,62 @@ function renderKpis(){
   document.getElementById('foot').innerHTML='Source: official FPL API, pulled live. Value/xGI/xGΔ/DC reflect 2025/26 until this season’s data lands. EO~ is an estimate (ownership + modelled captaincy) pending live sampling. A living document, refreshed each gameweek.';
 })();
 
+
+/* ---------- Pitch view (shared by My Team and Optimal XI) ---------- */
+const CLUBC={ARS:'#EF0107',AVL:'#670E36',BOU:'#DA291C',BRE:'#E30613',BHA:'#0057B8',CHE:'#034694',
+  COV:'#4B92DB',CRY:'#1B458F',EVE:'#003399',FUL:'#1a1a1a',HUL:'#F5A12D',IPS:'#3A64A3',LEE:'#D4AF00',
+  LIV:'#C8102E',MCI:'#6CABDD',MUN:'#DA291C',NEW:'#241F20',NFO:'#DD0000',TOT:'#132257',SUN:'#EB172B'};
+let teamView='pitch', optView='pitch';
+function fixMini(short,n){
+  const t=DATA.teams[short]; if(!t) return '';
+  return '<span class="fixmini">'+t.runs.slice(0,n).map(r=>`<span class="fcell ${dcls(r.d)}" title="GW${r.gw} ${r.opp} ${r.h?'home':'away'}">${r.opp}<small>${r.h?'H':'A'}</small></span>`).join('')+'</span>';
+}
+function pcard(p,o){
+  o=o||{};
+  const arm=o.cap?'<span class="arm2">C</span>':o.vice?'<span class="arm2 v">V</span>':'';
+  const stat=o.stat||`xP${optH}`, val=o.val!=null?o.val:0;
+  return `<div class="pc ${o.dim?'dim':''}" title="${p.n} · ${p.tm}">
+    <span class="acc" style="background:${CLUBC[p.tm]||'#8a9098'}"></span>${arm}
+    <div class="pn">${p.n}</div>
+    <div class="pm">${fmtM(p.price)} ${spBadges(p)} ${availFlag(p)}</div>
+    ${fixMini(p.tm,3)}
+    <div class="pstats"><span>${stat}</span><b>${val.toFixed(1)}</b></div>
+    <div class="pstats"><span>Rating</span><b><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></b></div>
+  </div>`;
+}
+function pitchHTML(xiIds,benchIds,capId,viceId,valFn,statLbl){
+  const rows={GK:[],DEF:[],MID:[],FWD:[]};
+  xiIds.forEach(id=>{const p=byId[id]; if(p) rows[p.pos].push(p);});
+  const line=(pos,lbl)=>rows[pos].length?`<div class="rowlbl">${lbl}</div><div class="prow">${
+    rows[pos].map(p=>pcard(p,{cap:p.i===capId,vice:p.i===viceId,val:valFn(p),stat:statLbl})).join('')}</div>`:'';
+  const bench=benchIds.map(id=>byId[id]).filter(Boolean);
+  return `<div class="pitch2">${line('GK','Goalkeeper')}${line('DEF','Defence')}${line('MID','Midfield')}${line('FWD','Attack')}</div>
+    ${bench.length?`<div class="benchstrip"><h5>Bench · in order</h5><div class="prow" style="justify-content:flex-start;margin-bottom:0">${
+      bench.map(p=>pcard(p,{dim:true,val:valFn(p),stat:statLbl})).join('')}</div></div>`:''}`;
+}
+function squadListHTML(ids,startSet,capId,viceId,valFn,statLbl){
+  const ps=ids.map(id=>byId[id]).filter(Boolean).sort((a,b)=>posOrder[a.pos]-posOrder[b.pos]||valFn(b)-valFn(a));
+  return `<div class="tblwrap"><table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>£</th>
+      <th class="l" style="padding-left:12px">Next 5</th><th>${statLbl}</th><th>Rating</th></tr></thead><tbody>`+
+    ps.map(p=>`<tr style="${startSet&&!startSet.has(p.i)?'opacity:.6':''}">
+      <td class="l"><span class="pname">${p.n}</span> ${p.i===capId?'<span class="badge p">C</span>':p.i===viceId?'<span class="badge">V</span>':''}
+        ${spBadges(p)} ${availFlag(p)} ${startSet&&!startSet.has(p.i)?'<span class="badge">bench</span>':''}
+        <div class="pmeta">${p.tm}</div></td>
+      <td class="l"><span class="pos-pill">${p.pos}</span></td><td>${N(p.price)}</td>
+      <td class="l" style="padding-left:12px">${fixCells(p.tm,5)}</td>
+      <td>${N(valFn(p))}</td><td><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></td></tr>`).join('')+
+    '</tbody></table></div>';
+}
+
 /* My Team */
 function renderTeam(){
-  const groups={GK:[],DEF:[],MID:[],FWD:[]}; CUR().squad.forEach(id=>{if(byId[id])groups[byId[id].pos].push(byId[id]);});
-  const startSet=new Set(CUR().starting);
-  document.getElementById('pitch').innerHTML=['GK','DEF','MID','FWD'].map(pos=>{
-    const cards=groups[pos].sort((a,b)=>(startSet.has(b.i)?1:0)-(startSet.has(a.i)?1:0)).map(p=>{
-      const arm=p.i===CUR().captain?'<span class="arm">C</span>':p.i===CUR().vice?'<span class="arm v">V</span>':'';
-      const b=!startSet.has(p.i);
-      return `<div class="pcard ${p.i===CUR().captain?'cap':''}" style="${b?'opacity:.62':''}">${arm}
-        <div class="cn">${p.n} ${spBadges(p)}</div><div class="cm">${p.tm} · ${fmtM(p.price)} ${b?'· bench':''}</div>
-        ${fixCells(p.tm,3)}
-        <div class="cstat"><span>Rating</span><b><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></b></div>
-        <div class="cstat"><span>xP3</span><b>${rollXP(p,3).toFixed(1)}</b></div>
-        <div class="cstat"><span>EO~</span><b>${p.eo.toFixed(0)}%</b></div></div>`;
-    }).join('');
-    return `<div class="line"><h4>${posName[pos]}</h4><div class="cards">${cards}</div></div>`;
-  }).join('');
+  const e=CUR(), startSet=new Set(e.starting);
+  const xi=e.starting.filter(id=>byId[id]);
+  const bench=e.squad.filter(id=>!startSet.has(id)&&byId[id]);
+  const valFn=p=>rollXP(p,3);
+  document.getElementById('pitch').innerHTML = teamView==='pitch'
+    ? pitchHTML(xi,bench,e.captain,e.vice,valFn,'xP3')
+    : squadListHTML(e.squad,startSet,e.captain,e.vice,valFn,'xP3');
   const startP=CUR().starting.map(id=>byId[id]).filter(Boolean);
   const flags=startP.filter(p=>p.pstart===false||['OUT','SUS','INJ','QUES','DBT'].includes(p.inj));
   const weak=[...startP].sort((a,b)=>a.vr-b.vr)[0];
@@ -504,6 +591,9 @@ function renderTeam(){
   if(weak) notes.push(`<b>Weakest link.</b> ${weak.n} is your lowest-rated starter at ${weak.vr.toFixed(1)}; the Optimal tab and transfer list below show the best upgrades.`);
   document.getElementById('teaminsight').innerHTML='<h4>Reading the room</h4>'+notes.map(n=>`<p>${n}</p>`).join('');
 }
+document.querySelectorAll('#teamviewtog button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#teamviewtog button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); teamView=b.dataset.w; renderTeam();});
 renderTeam();
 
 /* Targets */
@@ -518,7 +608,15 @@ renderTeam();
 /* Fixture Lab — editable ratings, profile + method, live re-rank */
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
 let RAT=JSON.parse(JSON.stringify(DATA.ratings));
-let fprofile='overall', fmethod='teamopp', frange=5, gtable='overall';
+let fprofile='overall', fmethod='teamopp', gtable='overall';
+const ALLGW=(function(){const set=new Set();Object.values(DATA.teams).forEach(t=>(t.runs||[]).forEach(r=>set.add(r.gw)));return [...set].sort((a,b)=>a-b);})();
+const FIRSTGW=ALLGW.length?ALLGW[0]:1, LASTGW=ALLGW.length?ALLGW[ALLGW.length-1]:38;
+let fromGW=FIRSTGW, toGW=Math.min(LASTGW,FIRSTGW+5);
+function fillGWSelects(){
+  const f=document.getElementById('fromgw'), t=document.getElementById('togw');
+  f.innerHTML=ALLGW.map(g=>`<option value="${g}" ${g===fromGW?'selected':''}>GW${g}</option>`).join('');
+  t.innerHTML=ALLGW.filter(g=>g>=fromGW).map(g=>`<option value="${g}" ${g===toGW?'selected':''}>GW${g}</option>`).join('');
+}
 const PROF_TBL={overall:'overall',attackers:'defence',defenders:'attack',dual:'attack'};
 function cDiff(team,opp,isHome){
   const oppV=isHome?'a':'h', ownV=isHome?'h':'a';
@@ -535,14 +633,15 @@ function cDiff(team,opp,isHome){
 }
 function renderFix(){
   const rows=DATA.team_summary.map(t=>{
-    const runs=(DATA.teams[t.short].runs||[]).slice(0,frange);
+    const runs=(DATA.teams[t.short].runs||[]).filter(r=>r.gw>=fromGW&&r.gw<=toGW);
     const cells=runs.map(r=>({...r,cd:cDiff(t.short,r.opp,r.h)}));
     const avg=cells.length?cells.reduce((s,c)=>s+c.cd,0)/cells.length:9;
-    return {...t,cells,avg};
+    const span=(toGW-fromGW+1);
+    return {...t,cells,avg,blanks:Math.max(0,span-cells.length)};
   }).sort((a,b)=>a.avg-b.avg);
-  document.getElementById('favghead').textContent='Avg '+frange;
-  document.getElementById('fixbody').innerHTML=rows.map(t=>`<tr><td class="l"><b>${t.short}</b> <span class="pmeta">${t.name}</span></td><td>${N(t.avg,2)}</td><td class="l" style="padding-left:16px"><span class="fix">${t.cells.map(c=>`<span class="fcell d${Math.round(c.cd)}" title="difficulty ${c.cd.toFixed(2)}">${c.opp}<small>${c.h?'H':'A'}</small></span>`).join('')}</span></td></tr>`).join('');
-  document.getElementById('fixlegend').innerHTML='<span style="color:var(--muted)">Difficulty</span>'+[1,2,3,4,5].map(x=>`<span class="fcell d${x}">${x}</span>`).join('')+'<span style="color:var(--faint);margin-left:8px">Lower is kinder. Ratings are yours to edit — changes are live this session.</span>';
+  document.getElementById('favghead').textContent=`Avg GW${fromGW}-${toGW}`;
+  document.getElementById('fixbody').innerHTML=rows.map(t=>`<tr><td class="l"><b>${t.short}</b> <span class="pmeta">${t.name}</span></td><td>${N(t.avg,2)}</td><td class="l" style="padding-left:16px"><span class="fix">${t.cells.map(c=>`<span class="fcell d${Math.round(c.cd)}" title="GW${c.gw} · difficulty ${c.cd.toFixed(2)}">${c.opp}<small>${c.h?'H':'A'}</small></span>`).join('')}${t.blanks?`<span class="fcell d0" title="no fixture in ${t.blanks} of these weeks">${t.blanks}×–</span>`:''}</span></td></tr>`).join('');
+  document.getElementById('fixlegend').innerHTML='<span style="color:var(--muted)">Difficulty</span>'+[1,2,3,4,5].map(x=>`<span class="fcell d${x}">${x}</span>`).join('')+'<span style="color:var(--faint);margin-left:8px">Lower is kinder. Grey marks weeks with no fixture. Ratings are yours to edit — changes are live this session.</span>';
 }
 function renderGrid(){
   const g=document.getElementById('fgrid');
@@ -566,7 +665,12 @@ function renderGrid(){
 }
 document.getElementById('fprofile').onchange=e=>{fprofile=e.target.value;gtable=PROF_TBL[fprofile];if(document.getElementById('fgrid').style.display!=='none')renderGrid();renderFix();};
 document.getElementById('fmethod').onchange=e=>{fmethod=e.target.value;renderFix();};
-document.querySelectorAll('#frange button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#frange button').forEach(x=>x.classList.remove('on'));b.classList.add('on');frange=+b.dataset.r;renderFix();});
+(function(){
+  fillGWSelects();
+  document.getElementById('fromgw').onchange=e=>{fromGW=+e.target.value; if(toGW<fromGW)toGW=fromGW; fillGWSelects(); renderFix();};
+  document.getElementById('togw').onchange=e=>{toGW=+e.target.value; renderFix();};
+  document.getElementById('fresetrange').onclick=()=>{fromGW=FIRSTGW;toGW=Math.min(LASTGW,FIRSTGW+5);fillGWSelects();renderFix();};
+})();
 document.getElementById('fedit').onclick=()=>{const g=document.getElementById('fgrid');const show=g.style.display==='none';g.style.display=show?'block':'none';document.getElementById('fedit').textContent=show?'Hide ratings ▴':'Edit ratings ▾';if(show)renderGrid();};
 renderFix();
 (function(){
@@ -588,7 +692,19 @@ document.getElementById('legend').innerHTML='<span style="color:var(--muted)">Ra
 let optH=3, optLocks=[], optExcl=[], optMode='lock', chip='none';
 let GK_CAP=Infinity;   // combined GK cap removed at Jack's request (Bench Boost build wants two playing keepers)
 const FORMS=[[3,4,3],[3,5,2],[4,3,3],[4,4,2],[4,5,1],[5,3,2],[5,4,1]];
-const xpH=p=>(p.xph&&p.xph.length)?p.xph[Math.min(Math.max(optH,1),p.xph.length)-1]:0;
+/* Projection lens for the solver. Normally the cumulative window; chip maths
+   temporarily points it at a single week (Free Hit) or a span (Wildcard). */
+let xpRange=null;
+const xpH=p=>{
+  if(!p.xph||!p.xph.length) return 0;
+  if(xpRange){ let t=0; for(let k=xpRange[0];k<=xpRange[1];k++) t+=(p.xpg&&p.xpg[k])||0; return t; }
+  return p.xph[Math.min(Math.max(optH,1),p.xph.length)-1];
+};
+function solveWith(range,fn){            // run a solve under a different lens, then restore
+  const sr=xpRange, sl=optLocks, se=optExcl;
+  xpRange=range; optLocks=[]; optExcl=[];
+  try { return fn(); } finally { xpRange=sr; optLocks=sl; optExcl=se; }
+}
 function solveOptimal(){
   const lockedSet=new Set(optLocks);
   const exSet=new Set(optExcl.filter(id=>!lockedSet.has(id)));
@@ -731,15 +847,9 @@ function renderOptimal(){
     <div class="kpi" style="text-align:left"><div class="v num">${bank}</div><div class="l">Bank £m</div></div>`;
   const lockedSet=new Set(optLocks), groups={GK:[],DEF:[],MID:[],FWD:[]};
   o.XI.forEach(id=>groups[byId[id].pos].push(id));
-  document.getElementById('optpitch').innerHTML=['GK','DEF','MID','FWD'].map(pos=>{
-    if(!groups[pos].length)return '';
-    const cards=groups[pos].map(id=>{const p=byId[id];const cap=id===o.cap?'<span class="arm">C</span>':'';
-      return `<div class="pcard ${id===o.cap?'cap':''}" ${lockedSet.has(id)?'style="box-shadow:0 0 0 2px var(--accent)"':''}>${cap}<div class="cn">${p.n} ${lockedSet.has(id)?'🔒':''} ${mineSet.has(id)?'<span class="badge">OWN</span>':''}</div>
-        <div class="cm">${p.tm} · ${fmtM(p.price)}</div>${fixCells(p.tm,3)}
-        <div class="cstat"><span>xP${optH}</span><b>${xpH(p).toFixed(1)}</b></div>
-        <div class="cstat"><span>Rating</span><b><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></b></div></div>`;}).join('');
-    return `<div class="line"><h4>${posName[pos]}</h4><div class="cards">${cards}</div></div>`;
-  }).join('');
+  document.getElementById('optpitch').innerHTML = optView==='pitch'
+    ? pitchHTML(o.XI,o.BEN,o.cap,null,p=>xpH(p),chip==='bb'?'xP (BB)':'xP'+optH)
+    : squadListHTML([...o.XI,...o.BEN],new Set(o.XI),o.cap,null,p=>xpH(p),chip==='bb'?'xP (BB)':'xP'+optH);
   document.getElementById('optbench').innerHTML=`<h4>Bench${chip==='bb'?' · all four score on Bench Boost':''}</h4><p>`+o.BEN.map(id=>{const p=byId[id];return `${p.n} <span style="color:var(--faint)">(${p.tm} ${p.pos} ${fmtM(p.price)}${chip==='bb'?' · '+xpH(p).toFixed(1)+' xP':''})</span>`;}).join(' · ')+'</p>';
   const sug=(CUR().suggestions&&CUR().suggestions[optH])||DATA.suggestions[optH]||[];
   document.getElementById('opttransfers').innerHTML= sug.length ? '<table><thead><tr><th class="l">Out</th><th class="l">In</th><th class="l" style="padding-left:14px">In: next 3</th><th>+xP</th></tr></thead><tbody>'+
@@ -762,6 +872,9 @@ document.addEventListener('click',e=>{if(!e.target.closest('.lockbar'))optResult
 document.querySelectorAll('#opthorizon button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#opthorizon button').forEach(x=>x.classList.remove('on'));b.classList.add('on');optH=+b.dataset.h;renderOptimal();});
 document.querySelectorAll('#optmode button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#optmode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');optMode=b.dataset.m;
   optSearch.placeholder=optMode==='excl'?'Search a player to exclude…':'Search a player to lock into the XI…';});
+document.querySelectorAll('#optviewtog button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#optviewtog button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); optView=b.dataset.w; renderOptimal();});
 document.querySelectorAll('#optchip button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#optchip button').forEach(x=>x.classList.remove('on'));b.classList.add('on');chip=b.dataset.c;renderOptimal();});
 renderLocks(); renderOptimal();
 
@@ -1137,6 +1250,15 @@ let cmpInit=false;
 /* ---------- 6-week transfer planner ---------- */
 let plan=[], planGW=0, planPick=null;
 const xg1=(p,k)=>(p&&p.xpg&&p.xpg.length>k)?p.xpg[k]:0;
+/* FPL hands back only half of any profit, rounded down, so selling for less than the
+   listed price is normal. Players bought during a plan sell at what you just paid. */
+function sellOf(id){
+  const p=byId[id]; if(!p) return 0;
+  const bought=plan.find(m=>m.in===id);
+  if(bought) return p.price;                       // no profit banked on a player you just bought
+  const tbl=CUR().sell||{}; const v=tbl[String(id)];
+  return (v==null)?p.price:v;
+}
 function squadAt(k){
   let ids=CUR().squad.slice();
   plan.filter(m=>m.gw<=k).forEach(m=>{const i=ids.indexOf(m.out); if(i>=0) ids[i]=m.in;});
@@ -1163,7 +1285,7 @@ function planEconomy(){
   for(let k=0;k<HZ;k++){
     if(k>0) ft=Math.min(5,ft+1);
     const wk=plan.filter(m=>m.gw===k);
-    wk.forEach(m=>{const o=byId[m.out],i=byId[m.in]; if(o&&i) bank+=o.price-i.price;});
+    wk.forEach(m=>{const i=byId[m.in]; if(i) bank+=sellOf(m.out)-i.price;});
     const extra=Math.max(0,wk.length-ft);
     hits.push(extra*4); ft=Math.max(0,ft-wk.length); banks.push(bank);
   }
@@ -1178,22 +1300,95 @@ function planValid(gw,outId,inId){
   const clubs={}; after.forEach(x=>{const p=byId[x]; if(p)clubs[p.tm]=(clubs[p.tm]||0)+1;});
   if(clubs[i.tm]>3) return `That would be four from ${i.tm} — max is three.`;
   const ec=planEconomy(); const bankAt=gw>0?ec.banks[gw-1]:(CUR().bank||0);
-  if(i.price>o.price+bankAt+1e-9) return `Not enough money — ${i.n} costs ${fmtM(i.price)}, you'd have ${fmtM(o.price+bankAt)}.`;
+  const got=sellOf(outId);
+  if(i.price>got+bankAt+1e-9)
+    return `Not enough money — ${i.n} costs ${fmtM(i.price)}, and selling ${o.n} raises ${fmtM(got)}${got<o.price?` (listed ${fmtM(o.price)}, profit is halved)`:''}, giving ${fmtM(got+bankAt)}.`;
   return null;
 }
+/* ---- Chips ----
+   Two full sets: the first expires at the GW19 deadline, the second runs GW20-38.
+   Each chip's value is solved rather than assumed:
+     Bench Boost   what your four bench players score that week
+     Triple Cap    one extra copy of your captain
+     Free Hit      best legal one-week squad, minus what yours would score
+     Wildcard      best squad for the rest of the window, minus your current path   */
+const CHIPS={BB:'Bench Boost',TC:'Triple Captain',FH:'Free Hit',WC:'Wildcard'};
+let chips={};                       // gw index -> chip code
+const half=k=>((GWS[k]!=null?GWS[k]:k+1)<=19?1:2);
+function chipValue(code,k){
+  const ids=squadAt(k), b=bestXI(ids,k);
+  if(code==='BB'){
+    const xi=new Set(b.xi.map(p=>p.i));
+    return ids.map(i=>byId[i]).filter(p=>p&&!xi.has(p.i)).reduce((a,p)=>a+xg1(p,k),0);
+  }
+  if(code==='TC') return b.cap?xg1(b.cap,k):0;
+  if(code==='FH'){
+    const o=solveWith([k,k],()=>solveOptimal());
+    return o?Math.max(0,o.score-b.pts):0;
+  }
+  if(code==='WC'){
+    const o=solveWith([k,HZ-1],()=>solveOptimal());
+    if(!o) return 0;
+    let mine=0; for(let w=k;w<HZ;w++) mine+=bestXI(squadAt(w),w).pts;
+    return Math.max(0,o.score-mine);
+  }
+  return 0;
+}
+function chipConflict(code,k){
+  if(chips[k]&&chips[k]!==code) return `GW${GWS[k]!=null?GWS[k]:k+1} already has ${CHIPS[chips[k]]}`;
+  for(const j in chips){
+    if(+j!==k && chips[j]===code && half(+j)===half(k))
+      return `${CHIPS[code]} is already used in GW${GWS[j]!=null?GWS[j]:(+j)+1} (same half of the season)`;
+  }
+  return null;
+}
+function chipTotal(){ let t=0; for(const k in chips) t+=chipValue(chips[k],+k); return t; }
+function renderChipBar(){
+  const k=planGW, gw=GWS[k]!=null?GWS[k]:k+1;
+  const cards=Object.keys(CHIPS).map(c=>{
+    const v=chipValue(c,k), on=chips[k]===c, bad=!on&&chipConflict(c,k);
+    return `<button class="gwcard ${on?'on':''}" data-chip="${c}" ${bad?`disabled style="opacity:.4" title="${bad}"`:''}>
+      <div class="g">${CHIPS[c]}</div><div class="v" style="color:${on?'var(--accent)':'var(--ink)'}">${v>0?'+'+v.toFixed(1):'—'}</div>
+      <div class="h" style="color:var(--faint)">${on?'active this week':'pts this week'}</div></button>`;}).join('');
+  document.getElementById('planchips').innerHTML=
+    `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 8px">
+       <span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Chip for GW${gw}</span>
+       <span style="color:var(--muted);font-size:12px">first set ends GW19 · second set from GW20</span>
+       ${chips[k]?`<button class="act" id="chipclear" style="padding:3px 10px;font-size:11.5px;margin-left:auto">Remove chip</button>`:''}
+     </div>
+     <div class="gwstrip" style="grid-template-columns:repeat(4,1fr)">${cards}</div>`;
+  document.querySelectorAll('#planchips [data-chip]').forEach(b=>b.onclick=()=>{
+    if(b.disabled) return;
+    const c=b.dataset.chip;
+    if(chips[planGW]===c) delete chips[planGW]; else {
+      const bad=chipConflict(c,planGW);
+      if(bad){document.getElementById('planwarn').textContent=bad;return;}
+      chips[planGW]=c;
+    }
+    document.getElementById('planwarn').textContent=''; renderPlanner();
+  });
+  const cc=document.getElementById('chipclear');
+  if(cc) cc.onclick=()=>{delete chips[planGW];renderPlanner();};
+}
+
 function renderPlanner(){
   const ec=planEconomy();
   let total=0, totHits=0;
   const wk=[];
   for(let k=0;k<HZ;k++){ const b=bestXI(squadAt(k),k); wk.push(b); total+=b.pts; totHits+=ec.hits[k]; }
+  const chipPts=chips&&Object.keys(chips).length?chipTotal():0;
+  total+=chipPts;
   document.getElementById('plangw').innerHTML=wk.map((b,k)=>`<button class="gwcard ${k===planGW?'on':''}" data-k="${k}">
-      <div class="g">GW${GWS[k]!=null?GWS[k]:k+1}</div><div class="v">${b.pts.toFixed(1)}</div>
+      <div class="g">GW${GWS[k]!=null?GWS[k]:k+1}${chips[k]?` <span class="badge p" style="margin-left:2px">${chips[k]}</span>`:''}</div>
+      <div class="v">${(b.pts+(chips[k]?chipValue(chips[k],k):0)).toFixed(1)}</div>
       <div class="h">${ec.hits[k]?('−'+ec.hits[k]+' hit'):''}</div></button>`).join('');
   document.querySelectorAll('#plangw .gwcard').forEach(c=>c.onclick=()=>{planGW=+c.dataset.k;planPick=null;renderPlanner();});
+  renderChipBar();
   const net=total-totHits;
   document.getElementById('plankpis').innerHTML=`
     <div class="kpi" style="text-align:left"><div class="v num">${net.toFixed(1)}</div><div class="l">Net pts · ${HZ}GW</div></div>
     <div class="kpi" style="text-align:left"><div class="v num">${total.toFixed(1)}</div><div class="l">Projected</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num" style="${chipPts?'color:var(--accent)':''}">${chipPts?'+'+chipPts.toFixed(1):'0'}</div><div class="l">From chips</div></div>
     <div class="kpi" style="text-align:left"><div class="v num" style="${totHits?'color:var(--bad)':''}">${totHits?'−'+totHits:'0'}</div><div class="l">Hits</div></div>
     <div class="kpi" style="text-align:left"><div class="v num">${(ec.banks[HZ-1]||0).toFixed(1)}</div><div class="l">Bank £m end</div></div>
     <div class="kpi" style="text-align:left"><div class="v num">${ec.ftLeft}</div><div class="l">Free left</div></div>`;
@@ -1207,7 +1402,7 @@ function renderPlanner(){
       const f=run.find(r=>r.gw===GWS[planGW])||run[planGW];
       const fc=f?`<span class="fcell ${dcls(f.d)}">${f.opp}<small>${f.h?'H':'A'}</small></span>`:'<span class="pmeta">blank</span>';
       const isCap=b.cap&&p.i===b.cap.i;
-      return `<tr style="${xiSet.has(p.i)?'':'opacity:.55'}"><td class="l"><span class="pname">${p.n}</span>${isCap?'<span class="badge p">C</span>':''}${xiSet.has(p.i)?'':'<span class="badge">bench</span>'}<div class="pmeta">${p.tm} ${p.pos} ${fmtM(p.price)}</div></td>
+      return `<tr style="${xiSet.has(p.i)?'':'opacity:.55'}"><td class="l"><span class="pname">${p.n}</span>${isCap?'<span class="badge p">C</span>':''}${xiSet.has(p.i)?'':'<span class="badge">bench</span>'}<div class="pmeta">${p.tm} ${p.pos} ${fmtM(p.price)}${sellOf(p.i)<p.price?` <span title="what you'd get back">· sells ${fmtM(sellOf(p.i))}</span>`:''}</div></td>
         <td class="l">${fc}</td><td>${N(xg1(p,planGW))}</td>
         <td><button class="act" style="padding:3px 9px;font-size:11.5px" data-sw="${p.i}">Swap</button></td></tr>`;}).join('')+'</tbody></table>';
   document.querySelectorAll('#plansquad button[data-sw]').forEach(bt=>bt.onclick=()=>{planPick=+bt.dataset.sw;openPlanSearch();});
@@ -1216,7 +1411,7 @@ function renderPlanner(){
     plan.slice().sort((a,b2)=>a.gw-b2.gw).map(m=>{const o=byId[m.out],i=byId[m.in];
       return `<div class="moveline"><b>GW${GWS[m.gw]!=null?GWS[m.gw]:m.gw+1}</b>
         <span class="tagout">${o?o.n:'?'}</span><span style="color:var(--faint)">→</span><span class="tagin">${i?i.n:'?'}</span>
-        <span style="color:var(--faint);margin-left:auto">${o&&i?((i.price-o.price)>=0?'+':'')+(i.price-o.price).toFixed(1)+'m':''}</span>
+        <span style="color:var(--faint);margin-left:auto">${o&&i?`${fmtM(sellOf(m.out))} → ${fmtM(i.price)}`:''}</span>
         <button class="act" style="padding:2px 8px;font-size:11px" data-rm="${m.gw}|${m.out}">✕</button></div>`;}).join('')
     : '<div style="padding:14px 0;color:var(--muted);font-size:12.5px">No moves planned. Hit Swap on any player to try one.</div>';
   document.querySelectorAll('#planmoves button[data-rm]').forEach(bt=>bt.onclick=()=>{
@@ -1242,7 +1437,7 @@ function openPlanSearch(){
       document.getElementById('planwarn').textContent=''; renderPlanner();});
   };
 }
-document.getElementById('planreset').onclick=()=>{plan=[];planPick=null;document.getElementById('planwarn').textContent='';document.getElementById('plansearch').style.display='none';renderPlanner();};
+document.getElementById('planreset').onclick=()=>{plan=[];chips={};planPick=null;document.getElementById('planwarn').textContent='';document.getElementById('plansearch').style.display='none';renderPlanner();};
 document.addEventListener('click',e=>{if(!e.target.closest('#v-planner .lockbar')){document.getElementById('planresults').classList.remove('on');}});
 let planInit=false;
 
@@ -1293,8 +1488,80 @@ function renderAccuracy(){
     <div class="tblwrap"><table><thead><tr><th class="l">GW</th><th>Avg error</th><th>Projected</th><th>Actual</th><th>Your XI proj</th><th>Your XI got</th><th class="l" style="padding-left:12px">Captain</th></tr></thead><tbody>${gwRows}</tbody></table></div>`;
 }
 
+/* ---------- Mini-league ---------- */
+let lgInit=false, lgIdx=0;
+function renderLeague(){
+  const LGS=DATA.leagues||[];
+  const sel=document.getElementById('lgsel'), body=document.getElementById('lgbody');
+  if(!LGS.length){
+    sel.style.display='none';
+    body.innerHTML=`<div class="insight" style="border-left-color:var(--d4)"><h4>Waiting on the season</h4>
+      <p>Your leagues and their tables load on the next refresh. Rivals' squads only become public once the first deadline passes, so the differential and captain analysis switches on after GW${DATA.meta.start_gw}.</p></div>`;
+    return;
+  }
+  sel.style.display='';
+  if(sel.options.length!==LGS.length)
+    sel.innerHTML=LGS.map((l,k)=>`<option value="${k}">${l.name}${l.size?` · ${l.size} teams`:''}</option>`).join('');
+  const L=LGS[Math.min(lgIdx,LGS.length-1)];
+  const me=L.me, rivals=(L.rivals||[]).slice().sort((a,b)=>(a.rank||9999)-(b.rank||9999));
+  const meRow=rivals.find(r=>r.entry===me);
+  const covered=L.covered||0;
+
+  const table=`<div class="tblwrap"><table><thead><tr><th class="l">#</th><th class="l">Team</th><th class="l">Manager</th><th>GW</th><th>Total</th><th class="l" style="padding-left:12px">Captain</th></tr></thead><tbody>`+
+    rivals.slice(0,30).map(r=>`<tr style="${r.entry===me?'background:var(--accent-soft)':''}">
+      <td class="l"><b>${r.rank||'—'}</b></td>
+      <td class="l"><span class="pname">${r.name}</span>${r.entry===me?' <span class="badge p">YOU</span>':''}${r.chip?` <span class="badge">${r.chip}</span>`:''}</td>
+      <td class="l"><span class="pmeta">${r.player||''}</span></td>
+      <td>${r.gw!=null?r.gw:'—'}</td><td><b>${r.total!=null?r.total:'—'}</b></td>
+      <td class="l" style="padding-left:12px">${r.captain&&byId[r.captain]?byId[r.captain].n:'<span style="color:var(--faint)">—</span>'}</td></tr>`).join('')+'</tbody></table></div>';
+
+  if(!covered){
+    body.innerHTML=`<div class="insight" style="border-left-color:var(--d4);margin-top:0"><h4>Table only, for now</h4>
+      <p>Rivals' squads aren't public until the first deadline passes. Once they are, this page shows who owns what inside the league, where you differ, and which captain actually gains you ground.</p></div>${table}`;
+    return;
+  }
+
+  const row=(z,extra)=>{const p=byId[z.i]; if(!p) return '';
+    return `<tr><td class="l"><span class="pname">${p.n}</span> ${spBadges(p)} ${availFlag(p)}<div class="pmeta">${p.tm} ${p.pos} ${fmtM(p.price)}</div></td>
+      <td>${z.own!=null?z.own.toFixed(0)+'%':'—'}</td><td>${z.eo!=null?z.eo.toFixed(0)+'%':'—'}</td>
+      <td>${N(rollXP(p,3))}</td><td><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></td>${extra?`<td class="l" style="padding-left:12px">${extra(p,z)}</td>`:''}</tr>`;};
+
+  const mine=(L.mine_rare||[]).slice(0,10);
+  const theirs=(L.their_edge||[]).slice(0,10);
+  const capCount={};
+  rivals.filter(r=>r.captain).forEach(r=>capCount[r.captain]=(capCount[r.captain]||0)+1);
+  const caps=Object.entries(capCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const myCap=meRow&&meRow.captain;
+
+  body.innerHTML=`
+    <div class="kpis" style="justify-content:flex-start;gap:26px;margin-bottom:14px">
+      <div class="kpi" style="text-align:left"><div class="v num">${meRow&&meRow.rank?meRow.rank:'—'}</div><div class="l">Your rank</div></div>
+      <div class="kpi" style="text-align:left"><div class="v num">${rivals.length}</div><div class="l">Teams</div></div>
+      <div class="kpi" style="text-align:left"><div class="v num">${covered}</div><div class="l">Squads read</div></div>
+    </div>
+    ${table}
+    <div class="grid2" style="margin-top:20px">
+      <div><h3 class="sec">Your differentials</h3>
+        <p class="secn">Yours that few rivals hold. These are where you gain ground when they return.</p>
+        <div class="tblwrap"><table><thead><tr><th class="l">Player</th><th>Owned</th><th>EO</th><th>xP3</th><th>Rating</th></tr></thead><tbody>${mine.map(z=>row(z)).join('')||'<tr><td class="l" colspan="5" style="color:var(--muted)">Nothing rare in your squad.</td></tr>'}</tbody></table></div>
+      </div>
+      <div><h3 class="sec">What they have that you don't</h3>
+        <p class="secn">Widely owned in the league and missing from your squad. Each is a week you can lose ground without doing anything wrong.</p>
+        <div class="tblwrap"><table><thead><tr><th class="l">Player</th><th>Owned</th><th>EO</th><th>xP3</th><th>Rating</th></tr></thead><tbody>${theirs.map(z=>row(z)).join('')||'<tr><td class="l" colspan="5" style="color:var(--muted)">You cover the field.</td></tr>'}</tbody></table></div>
+      </div>
+    </div>
+    <h3 class="sec" style="margin-top:22px">Captaincy across the league</h3>
+    <p class="secn">Matching the popular armband protects a lead. Going against it is how you make up ground when you're behind.</p>
+    <div class="tblwrap"><table><thead><tr><th class="l">Captain</th><th>Managers</th><th>Share</th><th class="l" style="padding-left:12px"></th></tr></thead><tbody>${
+      caps.map(([pid,c])=>{const p=byId[pid]; if(!p) return '';
+        return `<tr><td class="l"><span class="pname">${p.n}</span> <span class="pmeta">${p.tm}</span></td><td>${c}</td>
+          <td>${Math.round(100*c/covered)}%</td><td class="l" style="padding-left:12px">${String(pid)===String(myCap)?'<span class="badge p">yours</span>':''}</td></tr>`;}).join('')
+      ||'<tr><td class="l" colspan="4" style="color:var(--muted)">No captain data yet.</td></tr>'}</tbody></table></div>`;
+}
+(function(){const sel=document.getElementById('lgsel'); if(sel) sel.onchange=e=>{lgIdx=+e.target.value;renderLeague();};})();
+
 /* Tabs */
-document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');if(b.dataset.v==='sim'&&!simInit){simInit=true;renderSim();}if(b.dataset.v==='compare'&&!cmpInit){cmpInit=true;renderCmpChips();renderRadar();}if(b.dataset.v==='planner'&&!planInit){planInit=true;renderPlanner();}if(b.dataset.v==='accuracy'&&!accInit){accInit=true;renderAccuracy();}});
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');if(b.dataset.v==='sim'&&!simInit){simInit=true;renderSim();}if(b.dataset.v==='compare'&&!cmpInit){cmpInit=true;renderCmpChips();renderRadar();}if(b.dataset.v==='planner'&&!planInit){planInit=true;renderPlanner();}if(b.dataset.v==='accuracy'&&!accInit){accInit=true;renderAccuracy();}if(b.dataset.v==='league'&&!lgInit){lgInit=true;renderLeague();}});
 
 headRow(); render();
 </script>

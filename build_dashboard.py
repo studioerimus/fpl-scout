@@ -46,7 +46,7 @@ else:
 HORIZON = 6                          # planning window: next 6 gameweeks
 nxt = [e['id'] for e in d['events'] if e.get('is_next')]
 start_gw = nxt[0] if nxt else next((e['id'] for e in d['events'] if not e.get('finished')), 1)
-upcoming = [e['id'] for e in d['events'] if e['id'] >= start_gw][:8]
+upcoming = [e['id'] for e in d['events'] if e['id'] >= start_gw]        # full remaining season for the ticker
 
 from collections import defaultdict
 tf = defaultdict(dict)
@@ -55,7 +55,8 @@ for f in fx:
     if ev in upcoming:
         tf[f['team_h']][ev] = (teams[f['team_a']]['short'], 1, f['team_h_difficulty'])
         tf[f['team_a']][ev] = (teams[f['team_h']]['short'], 0, f['team_a_difficulty'])
-def team_runs(tid, n=8):
+def team_runs(tid, n=None):
+    n = n or len(upcoming)
     return [{'gw':ev,'opp':tf[tid][ev][0],'h':tf[tid][ev][1],'d':tf[tid][ev][2]} for ev in upcoming[:n] if ev in tf[tid]]
 def fdr_avg(tid, n=5):
     ds=[tf[tid][ev][2] for ev in upcoming[:n] if ev in tf[tid]]
@@ -286,6 +287,17 @@ def suggest(h, topn=4, squad=None):
     return out[:topn]
 suggestions={str(h):suggest(h) for h in range(1,HORIZON+1)}
 
+# ---- selling prices (FPL returns only half of any profit, rounded down) ----
+PURCH=load('purchases.json',{}) or {}
+def sell_price(entry_id, pid, cur):
+    """cur is in £m. Falls back to current price when we have no record of the buy."""
+    book=PURCH.get(str(entry_id)) or {}
+    buy=book.get(str(pid))
+    if buy is None: return round(cur,1), False
+    cur_t, buy_t = int(round(cur*10)), int(buy)
+    if cur_t <= buy_t: return round(cur_t/10,1), True      # a loss is taken in full
+    return round((buy_t + (cur_t-buy_t)//2)/10, 1), True   # profit halved, rounded down
+
 # ---- per-entry payloads (multi-team) ----
 entries=[]
 for E in ENTRIES:
@@ -298,6 +310,8 @@ for E in ENTRIES:
         'captain': next((p[0] for p in pk if p[2]), esq[9] if len(esq)>9 else esq[0]),
         'vice': next((p[0] for p in pk if p[3]), esq[0]),
         'bank': E.get('bank',0)/10.0,
+        'sell': {str(i): sell_price(E.get('entry'), i, byid[i]['price'])[0] for i in valid},
+        'sell_known': any(sell_price(E.get('entry'), i, byid[i]['price'])[1] for i in valid),
         'suggestions': {str(h):suggest(h,squad=valid) for h in range(1,HORIZON+1)} if len(valid)==15 else {},
     })
 
@@ -320,15 +334,52 @@ for tid in teams:
         a=atk_scale(team_goals[tid]); df=def_scale(gk_cs[tid])
         ratings['attack'][sh]={'h':a,'a':a}; ratings['defence'][sh]={'h':df,'a':df}
 
+# ---- mini-league intelligence + transfer velocity ----
+LG=load('leagues.json',{}) or {}
+VEL=load('velocity.json',{}) or {}
+league_out=[]
+for L in LG.get('leagues',[]):
+    rivals=L.get('rivals',[]) or []
+    withpicks=[r for r in rivals if r.get('picks')]
+    own={}; capown={}
+    for r in withpicks:
+        for pid in r['picks']: own[pid]=own.get(pid,0)+1
+        if r.get('captain'): capown[r['captain']]=capown.get(r['captain'],0)+1
+    n=len(withpicks)
+    def pct(c): return round(100.0*c/n,1) if n else None
+    # effective ownership inside the league: a captain counts twice
+    eo={pid: round(100.0*(own[pid]+capown.get(pid,0))/n,1) for pid in own} if n else {}
+    mine=set(SQUAD)
+    diffs_for=sorted([{'i':pid,'own':pct(own[pid]),'eo':eo.get(pid)} for pid in mine if pid in byid],
+                     key=lambda z:(z['own'] if z['own'] is not None else 0))
+    theirs=sorted([{'i':pid,'own':pct(c),'eo':eo.get(pid)} for pid,c in own.items() if pid not in mine and pid in byid],
+                  key=lambda z:-(z['own'] or 0))[:15]
+    league_out.append({'id':L.get('id'),'name':L.get('name'),'size':L.get('size'),
+        'rivals':[{k:r.get(k) for k in ('entry','name','player','rank','total','gw','captain','chip')} for r in rivals],
+        'covered':n,'eo':eo,'own':{str(k):pct(v) for k,v in own.items()},
+        'mine_rare':[z for z in diffs_for if z['own'] is not None][:15],'their_edge':theirs,
+        'me':LG.get('me')})
+
+# transfer velocity: net flow since the earliest sample we still hold
+vel_out={}
+sm=VEL.get('samples',[])
+if len(sm)>=2:
+    first,last=sm[0],sm[-1]
+    for pid,(net,cost) in last.get('n',{}).items():
+        f=first.get('n',{}).get(pid)
+        if not f: continue
+        vel_out[pid]={'net':net,'delta':net-f[0],'from':first['t'],'to':last['t'],
+                      'price_moved':round((cost-f[1])/10,1)}
+
 out={'ratings':ratings,'gw1odds':GW1ODDS,'meta':{'start_gw':start_gw,'deadline':d['events'][start_gw-1]['deadline_time'],
              'team_name':(MT.get('name') if MT else None) or "Jack's FPL Team",
              'season_started':any(e.get('finished') for e in d['events']),
              'built':os.environ.get('BUILD_STAMP',''),'built_iso':datetime.datetime.utcnow().replace(microsecond=0).isoformat()+'Z',
              'eo_live':bool(eo_real),'horizon':HORIZON,'gws':upcoming[:HORIZON],
              'lineups':bool(LU.get('start')),'odds':bool(OD.get('matches'))},
-     'entries':entries,'accuracy':ACC,
-     'teams':{teams[tid]['short']:{'name':teams[tid]['name'],'runs':team_runs(tid,8),'avg5':fdr_avg(tid,5)} for tid in teams},
-     'team_summary':sorted([{'short':teams[tid]['short'],'name':teams[tid]['name'],'runs':team_runs(tid,8),'avg5':fdr_avg(tid,5)} for tid in teams],key=lambda x:(x['avg5'] if x['avg5'] else 9)),
+     'entries':entries,'accuracy':ACC,'leagues':league_out,'velocity':vel_out,
+     'teams':{teams[tid]['short']:{'name':teams[tid]['name'],'runs':team_runs(tid),'avg5':fdr_avg(tid,5)} for tid in teams},
+     'team_summary':sorted([{'short':teams[tid]['short'],'name':teams[tid]['name'],'runs':team_runs(tid),'avg5':fdr_avg(tid,5)} for tid in teams],key=lambda x:(x['avg5'] if x['avg5'] else 9)),
      'players':players,'squad':SQUAD,'starting':STARTING,'captain':CAPTAIN,'vice':VICE,
      'optimal':optimal,'suggestions':suggestions}
 json.dump(out,open(os.path.join(HERE,'dash_data.json'),'w'))

@@ -79,6 +79,28 @@ if all_teams:
     json.dump(all_teams[0], open(path('myteam.json'), 'w'))   # primary, back-compat
 print('teams tracked:', [t.get('entry') for t in all_teams])
 
+# ---- 2b. purchase prices, so selling prices can be exact ----
+# FPL gives back only half of any profit, rounded down, and the public API never
+# exposes what you paid. We refresh several times a day, so the first time a player
+# appears in a squad we record that day's price as the buy price and track it from there.
+try:
+    PRICE_NOW = {e['id']: e['now_cost'] for e in d['elements']}
+    purch = json.load(open(path('purchases.json'))) if os.path.exists(path('purchases.json')) else {}
+    for t in all_teams:
+        key = str(t.get('entry'))
+        held = {str(p[0]) for p in t.get('picks', [])}
+        book = purch.get(key, {})
+        for pid in held:
+            if pid not in book and int(pid) in PRICE_NOW:
+                book[pid] = PRICE_NOW[int(pid)]          # first sighting = what you paid
+        for pid in list(book):                            # sold players drop out of the book
+            if pid not in held: del book[pid]
+        purch[key] = book
+    json.dump(purch, open(path('purchases.json'), 'w'))
+    print('purchase prices tracked for', len(purch), 'team(s)')
+except Exception as ex:
+    print('purchase-price warning:', ex)
+
 # ---- 2c. live feeds: predicted lineups (Rotowire) + odds (the-odds-api, Oddschecker fallback) ----
 NAMEMAP = {'arsenal':'ARS','aston villa':'AVL','bournemouth':'BOU','brentford':'BRE','brighton':'BHA',
            'chelsea':'CHE','coventry':'COV','crystal palace':'CRY','everton':'EVE','fulham':'FUL',
@@ -222,6 +244,74 @@ except Exception as e:
 STATUS['ts'] = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
 json.dump(STATUS, open(path('feeds_status.json'), 'w'), indent=2)
 print('feeds_status:', json.dumps(STATUS))
+
+# ---- 2c. mini-leagues: standings always, rival squads once per gameweek ----
+# Rivals' picks only become public after a deadline, and they only change weekly,
+# so pulling them on every refresh would hammer the API for nothing.
+try:
+    prev_lg = json.load(open(path('leagues.json'))) if os.path.exists(path('leagues.json')) else {}
+    cur_gw = None
+    me = all_teams[0].get('entry') if all_teams else ENTRY
+    ent = get(f'https://fantasy.premierleague.com/api/entry/{me}/')
+    cur_gw = ent.get('current_event')
+    classic = [l for l in (ent.get('leagues', {}) or {}).get('classic', []) if not l.get('league_type') == 's']
+    classic = [l for l in classic if (l.get('num_entries') or 0) <= 200][:6]      # skip the giant global ones
+    need_picks = bool(cur_gw) and prev_lg.get('picks_gw') != cur_gw
+    out_lg = {'picks_gw': cur_gw if need_picks else prev_lg.get('picks_gw'), 'me': me, 'leagues': []}
+    prev_by_id = {l['id']: l for l in prev_lg.get('leagues', [])}
+    seen_picks = {}
+    for L in classic:
+        lid = L['id']
+        try:
+            st = get(f'https://fantasy.premierleague.com/api/leagues-classic/{lid}/standings/')
+        except Exception as ex:
+            print('league', lid, 'standings failed:', ex)
+            if lid in prev_by_id: out_lg['leagues'].append(prev_by_id[lid])
+            continue
+        rivals = []
+        for r in (st.get('standings', {}) or {}).get('results', [])[:60]:
+            row = {'entry': r['entry'], 'name': r['entry_name'], 'player': r['player_name'],
+                   'rank': r['rank'], 'total': r['total'], 'gw': r.get('event_total')}
+            if need_picks:
+                if r['entry'] in seen_picks:
+                    row.update(seen_picks[r['entry']])
+                else:
+                    try:
+                        pk = get(f"https://fantasy.premierleague.com/api/entry/{r['entry']}/event/{cur_gw}/picks/")
+                        got = {'picks': [q['element'] for q in pk['picks']],
+                               'captain': next((q['element'] for q in pk['picks'] if q['is_captain']), None),
+                               'chip': pk.get('active_chip')}
+                        seen_picks[r['entry']] = got; row.update(got)
+                    except Exception:
+                        pass
+            else:
+                old = next((x for x in (prev_by_id.get(lid, {}).get('rivals') or []) if x['entry'] == r['entry']), None)
+                if old and old.get('picks'):
+                    row.update({k: old[k] for k in ('picks', 'captain', 'chip') if k in old})
+            rivals.append(row)
+        out_lg['leagues'].append({'id': lid, 'name': L['name'], 'size': L.get('num_entries'), 'rivals': rivals})
+    json.dump(out_lg, open(path('leagues.json'), 'w'))
+    print('leagues:', [(l['id'], l['name'], len(l['rivals'])) for l in out_lg['leagues']],
+          '| squads pulled' if need_picks else '| standings only (pre-deadline or already current)')
+except Exception as ex:
+    print('mini-league warning:', ex)
+
+# ---- 2d. transfer velocity: a rolling record so price moves can be sensed ----
+try:
+    vel = json.load(open(path('velocity.json'))) if os.path.exists(path('velocity.json')) else {'samples': []}
+    stamp = datetime.datetime.utcnow().replace(microsecond=0).isoformat()
+    watch = set()
+    for t in all_teams: watch.update(str(p[0]) for p in t.get('picks', []))
+    top = sorted(d['elements'], key=lambda e: -(e.get('transfers_in_event', 0) + e.get('transfers_out_event', 0)))[:60]
+    watch.update(str(e['id']) for e in top)
+    vel['samples'].append({'t': stamp,
+        'n': {str(e['id']): [e.get('transfers_in_event', 0) - e.get('transfers_out_event', 0), e['now_cost']]
+              for e in d['elements'] if str(e['id']) in watch}})
+    vel['samples'] = vel['samples'][-96:]            # about four days at six samples a day
+    json.dump(vel, open(path('velocity.json'), 'w'))
+    print('velocity sampled:', len(vel['samples']), 'snapshots on file')
+except Exception as ex:
+    print('velocity warning:', ex)
 
 # ---- 3. rebuild (keep previous data for the diff) ----
 if os.path.exists(path('dash_data.json')):
