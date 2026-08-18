@@ -108,6 +108,7 @@
   .lockbar{margin-bottom:16px;position:relative;max-width:360px}
   .optresults{position:absolute;z-index:20;background:var(--panel);border:1px solid var(--line);border-radius:9px;margin-top:4px;max-height:280px;overflow:auto;width:360px;box-shadow:0 8px 24px rgba(0,0,0,.10);display:none}
   .optresults.on{display:block}
+  .optresults.nomatch{pointer-events:none}
   .optresults div{padding:8px 12px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line2)}
   .optresults div:hover{background:#faf9ff}
   .optresults .rp{color:var(--faint);font-family:var(--disp)}
@@ -116,6 +117,39 @@
   .lockchip button{border:none;background:#d9d5f5;color:#4a3fc7;border-radius:50%;width:17px;height:17px;cursor:pointer;font-size:11px;line-height:1;padding:0}
   .lockwarn{color:var(--bad);font-size:12.5px;margin-top:8px}
   .foot{color:var(--faint);font-size:11.5px;margin-top:26px;border-top:1px solid var(--line);padding-top:14px}
+  .toprow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .toprow .sp{margin-left:auto}
+  .age{color:var(--muted);font-size:12.5px}
+  .age b{color:var(--ink);font-weight:600}
+  .dot-live{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--good);margin-right:5px;vertical-align:middle}
+  .dot-stale{background:var(--d4)}
+  .dot-old{background:var(--bad)}
+  button.act{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:var(--body);font-weight:500}
+  button.act:hover{border-color:var(--accent);color:var(--accent)}
+  button.act[disabled]{opacity:.55;cursor:default}
+  a.act{display:inline-block;border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:500}
+  a.act:hover{border-color:var(--accent);color:var(--accent)}
+  /* compare */
+  .cmpwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+  @media(max-width:900px){.cmpwrap{grid-template-columns:1fr}}
+  .radarcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 8px 4px}
+  .cmpchip{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:5px 6px 5px 11px;font-size:12.5px;font-weight:600;color:#fff}
+  .cmpchip button{border:none;background:rgba(255,255,255,.28);color:#fff;border-radius:50%;width:17px;height:17px;cursor:pointer;font-size:11px;line-height:1;padding:0}
+  .cmplegend{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+  .swatch{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+  .rtip{position:fixed;pointer-events:none;background:var(--ink);color:#fff;border-radius:7px;padding:6px 9px;font-size:11.5px;line-height:1.35;opacity:0;transition:opacity .12s;z-index:50;max-width:220px}
+  .rtip b{font-family:var(--disp)}
+  /* planner */
+  .gwstrip{display:grid;gap:8px;grid-template-columns:repeat(6,1fr);margin-bottom:14px}
+  @media(max-width:820px){.gwstrip{grid-template-columns:repeat(3,1fr)}}
+  .gwcard{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 10px;cursor:pointer;text-align:left}
+  .gwcard.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+  .gwcard .g{font-family:var(--disp);font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+  .gwcard .v{font-family:var(--disp);font-weight:600;font-size:17px;margin-top:2px}
+  .gwcard .h{font-size:10.5px;color:var(--bad);margin-top:1px;min-height:13px}
+  .planrow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line2)}
+  .moveline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;padding:7px 0;border-bottom:1px solid var(--line2)}
+  .tagout{color:var(--bad);font-weight:600} .tagin{color:var(--good);font-weight:600}
   h3.sec{font-family:var(--disp);font-size:15px;margin:0 0 4px}
   p.secn{color:var(--muted);font-size:12.5px;margin:0 0 14px}
 </style>
@@ -127,12 +161,21 @@
     <div class="kpis" id="kpis"></div>
   </div>
   <div class="note" id="datanote"></div>
+  <div class="toprow">
+    <span id="teamswitch"></span>
+    <span class="sp"></span>
+    <span class="age" id="dataage"></span>
+    <button class="act" id="btnrefresh">Refresh</button>
+    <a class="act" id="btnfull" target="_blank" rel="noopener">Force full update ↗</a>
+  </div>
 
   <nav class="tabs">
     <button data-v="players" class="on">Players</button>
     <button data-v="team">My Team</button>
-    <button data-v="preseason">Preseason</button>
+    <button data-v="planner">Planner</button>
+    <button data-v="compare">Compare</button>
     <button data-v="targets">Targets</button>
+    <button data-v="accuracy">Accuracy</button>
     <button data-v="fixtures">Fixtures</button>
     <button data-v="optimal">Optimal XI</button>
     <button data-v="sim">Simulator</button>
@@ -147,7 +190,7 @@
       <label class="chk"><input type="checkbox" id="nailed"> Nailed</label>
       <label class="chk"><input type="checkbox" id="mineonly"> My squad</label>
       <span style="color:var(--muted);font-size:12px;margin-left:6px">xP</span>
-      <div class="seg" id="horizon"><button data-h="1">1</button><button data-h="2">2</button><button data-h="3" class="on">3</button><button data-h="4">4</button><button data-h="5">5</button></div>
+      <div class="seg" id="horizon"><button data-h="1">1</button><button data-h="2">2</button><button data-h="3" class="on">3</button><button data-h="4">4</button><button data-h="5">5</button><button data-h="6">6</button></div>
       <label class="chk" style="gap:7px;margin-left:8px">Max <input type="range" id="pricemax" style="width:104px;accent-color:var(--accent)"> <span id="pricelbl" class="num" style="min-width:42px;color:var(--ink);font-weight:600"></span></label>
     </div>
     <div class="lensbar">
@@ -164,28 +207,65 @@
   <section class="view" id="v-team">
     <h3 class="sec">Your XV</h3>
     <p class="secn">Captain and vice marked. Rating, rolling xP and estimated effective ownership per player.</p>
+    <div id="syncnote"></div>
+    <div class="controls" style="margin:12px 0">
+      <button class="act" id="btnedit">Edit my team</button>
+      <button class="act" id="btnresetteam" style="display:none">Reset to synced</button>
+      <button class="act" id="btncopyteam" style="display:none">Copy for the repo</button>
+      <span id="editmsg" style="color:var(--muted);font-size:12.5px"></span>
+    </div>
+    <div class="fgrid" id="teameditor" style="display:none"></div>
+    <div class="lockbar" style="max-width:none">
+      <input class="search" id="teamsearch" style="width:100%;display:none" placeholder="Search a replacement…" autocomplete="off">
+      <div class="optresults" id="teamresults" style="width:100%"></div>
+    </div>
     <div class="pitch" id="pitch"></div>
     <div class="insight" id="teaminsight"></div>
   </section>
 
-  <section class="view" id="v-preseason">
-    <h3 class="sec">Preseason tracker</h3>
-    <p class="secn">What actually moves before GW1: fitness and injuries, who is in the predicted XI, set-piece duty, and the players with no minutes to judge on yet. Friendly goals are noise, so this reads the signal that matters — minutes and roles.</p>
-    <div class="insight" id="pre_squad" style="margin-top:0"></div>
-    <h3 class="sec" style="margin-top:22px">Availability watch</h3>
-    <p class="secn">Live from FPL: knocks, doubts and suspensions across the players worth caring about. Chance is FPL's stated odds of featuring next round.</p>
-    <div class="tblwrap" id="pre_avail"></div>
-    <div class="grid2" style="margin-top:20px">
-      <div><h3 class="sec">Set-piece duty</h3><p class="secn">Penalties first, then free-kicks and corners. Confirmed roles are nailed points.</p><div class="tblwrap" id="pre_sp"></div></div>
-      <div><h3 class="sec">Ownership momentum</h3><p class="secn">Where the crowd is moving as teams pick. The template forming.</p><div class="tblwrap" id="pre_mom"></div></div>
+  <section class="view" id="v-planner">
+    <h3 class="sec">Transfer planner</h3>
+    <p class="secn">Plan the next six gameweeks. Stage transfers on the week you'd make them, and the projection, budget, free transfers and hits all update. Nothing here touches your real team — it's a sandbox.</p>
+    <div class="gwstrip" id="plangw"></div>
+    <div class="kpis" id="plankpis" style="justify-content:flex-start;gap:26px;margin-bottom:8px"></div>
+    <div class="lockwarn" id="planwarn"></div>
+    <div class="grid2" style="margin-top:6px">
+      <div>
+        <h3 class="sec" id="plansqhead">Squad</h3>
+        <p class="secn">Projected points for the selected week. Click Swap to plan a change from that week onward.</p>
+        <div class="tblwrap" id="plansquad"></div>
+      </div>
+      <div>
+        <h3 class="sec">Planned moves</h3>
+        <p class="secn">Applied from the gameweek they're made. Free transfers roll over, capped at five; anything extra costs four points.</p>
+        <div class="tblwrap" style="padding:4px 14px" id="planmoves"></div>
+        <div class="lockbar" style="max-width:none;margin-top:12px">
+          <input class="search" id="plansearch" style="width:100%;display:none" placeholder="Search a replacement…" autocomplete="off">
+          <div class="optresults" id="planresults" style="width:100%"></div>
+        </div>
+        <button class="act" id="planreset" style="margin-top:10px">Clear plan</button>
+      </div>
     </div>
-    <h3 class="sec" style="margin-top:22px">Predicted XI risk</h3>
-    <p class="secn">Notable players currently outside their club's predicted lineup — the minutes doubts to track as friendlies sharpen roles.</p>
-    <div class="tblwrap" id="pre_xi"></div>
-    <h3 class="sec" style="margin-top:22px">No read yet — new &amp; unproven</h3>
-    <p class="secn">Priced up but zero Premier League minutes last season: new signings, promoted-club players and returnees. Their preseason minutes are the only evidence we have, which is exactly where the friendly feed plugs in.</p>
-    <div class="tblwrap" id="pre_new"></div>
-    <div class="legend" id="pre_note"></div>
+  </section>
+
+  <section class="view" id="v-compare">
+    <h3 class="sec">Player comparison</h3>
+    <p class="secn">Pick up to four players. Each axis is that player's percentile against others in the same position, so a defender is judged on defenders' terms. Outer edge is best in position.</p>
+    <div class="lockbar" style="max-width:420px">
+      <input class="search" id="cmpsearch" style="width:100%" placeholder="Search a player to add…" autocomplete="off">
+      <div class="optresults" id="cmpresults" style="width:420px"></div>
+    </div>
+    <div class="cmplegend" id="cmpchips" style="margin-top:10px"></div>
+    <div class="radarcard" style="display:flex;justify-content:center"><div id="radar" style="width:100%;max-width:560px"></div></div>
+    <div id="cmpaxisnote" class="secn" style="margin:12px 0 10px"></div>
+    <div class="tblwrap" id="cmptable"></div>
+  </section>
+
+  <section class="view" id="v-accuracy">
+    <h3 class="sec">Model accuracy</h3>
+    <p class="secn">Every gameweek's projections are sealed before the deadline, then scored once results land. Sealing first matters: judged after teams are announced, any model looks better than it is. What it learns here feeds back into the projections automatically.</p>
+    <div class="kpis" id="accbig" style="justify-content:flex-start;gap:26px;margin-bottom:14px"></div>
+    <div id="accbody"></div>
   </section>
 
   <section class="view" id="v-targets">
@@ -227,15 +307,17 @@
         <p class="secn">The best legal £100m squad the model can build, maximising projected points over your chosen window. Solved, not guessed. Flip on Bench Boost and it values all fifteen, so it spends up for two playing keepers and a starting bench.</p></div>
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Window</span>
-        <div class="seg" id="opthorizon"><button data-h="1">1</button><button data-h="2">2</button><button data-h="3" class="on">3</button><button data-h="4">4</button><button data-h="5">5</button></div></div>
+        <div class="seg" id="opthorizon"><button data-h="1">1</button><button data-h="2">2</button><button data-h="3" class="on">3</button><button data-h="4">4</button><button data-h="5">5</button><button data-h="6">6</button></div></div>
         <div style="display:flex;align-items:center;gap:8px"><span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Chip</span>
         <div class="seg" id="optchip"><button data-c="none" class="on">None</button><button data-c="bb">Bench Boost</button></div></div>
       </div>
     </div>
     <div class="lockbar">
+      <div class="seg" id="optmode" style="margin-bottom:8px"><button data-m="lock" class="on">Lock in</button><button data-m="excl">Exclude</button></div>
       <input class="search" id="optsearch" style="width:100%" placeholder="Search a player to lock into the XI…" autocomplete="off">
       <div class="optresults" id="optresults"></div>
       <div class="optlocks" id="optlocks"></div>
+      <div class="optlocks" id="optexcl"></div>
       <div class="lockwarn" id="lockwarn"></div>
     </div>
     <div class="kpis" id="optkpis" style="justify-content:flex-start;gap:26px;margin-bottom:16px"></div>
@@ -269,7 +351,13 @@ const DATA = __DATA__;
 const posName={GK:'Goalkeepers',DEF:'Defenders',MID:'Midfielders',FWD:'Forwards'};
 const posOrder={GK:1,DEF:2,MID:3,FWD:4};
 const byId={}; DATA.players.forEach(p=>byId[p.i]=p);
-const mineSet=new Set(DATA.squad);
+/* entries: one or more FPL teams in the same dashboard */
+const ENTRIES=(DATA.entries&&DATA.entries.length)?DATA.entries:[{id:null,name:DATA.meta.team_name,squad:DATA.squad,starting:DATA.starting,captain:DATA.captain,vice:DATA.vice,bank:0,suggestions:DATA.suggestions}];
+let curE=0;
+const CUR=()=>ENTRIES[curE];
+let mineSet=new Set(CUR().squad);
+const HZ=(DATA.meta&&DATA.meta.horizon)||5;
+const GWS=(DATA.meta&&DATA.meta.gws)||[];
 const fmtM=v=>'£'+v.toFixed(1);
 const dcls=d=>'d'+(d||0);
 function fixCells(short,n){const t=DATA.teams[short];if(!t)return '';return '<span class="fix">'+t.runs.slice(0,n).map(r=>`<span class="fcell ${dcls(r.d)}">${r.opp}<small>${r.h?'H':'A'}</small></span>`).join('')+'</span>';}
@@ -283,7 +371,7 @@ function availFlag(p){
 
 /* rolling xP — model-computed (odds + start-probability baked in) */
 let horizon=3;
-function rollXP(p,N){return (p.xph&&p.xph.length)?p.xph[Math.min(Math.max(N,1),5)-1]:p.ep*N;}
+function rollXP(p,N){return (p.xph&&p.xph.length)?p.xph[Math.min(Math.max(N,1),p.xph.length)-1]:p.ep*N;}
 
 /* cell renderers */
 const N=(v,dec=1)=>`<span class="num">${(v||0).toFixed(dec)}</span>`;
@@ -369,15 +457,18 @@ document.getElementById('nailed').onchange=e=>{nailedOnly=e.target.checked;rende
 document.getElementById('mineonly').onchange=e=>{mineOnly=e.target.checked;render();};
 
 /* KPIs + banner */
-(function(){
-  if(DATA.meta.team_name) document.getElementById('mastsub').textContent='FPL 2026/27 · '+DATA.meta.team_name;
-  const sq=DATA.squad.map(id=>byId[id]);
+function renderKpis(){
+  if(CUR().name) document.getElementById('mastsub').textContent='FPL 2026/27 · '+CUR().name;
+  const sq=CUR().squad.map(id=>byId[id]).filter(Boolean);
   const val=sq.reduce((a,p)=>a+p.price,0), bank=100-val;
-  const ep=DATA.starting.map(id=>byId[id]).reduce((a,p)=>a+p.ep,0);
+  const ep=CUR().starting.map(id=>byId[id]).filter(Boolean).reduce((a,p)=>a+p.ep,0);
   document.getElementById('kpis').innerHTML=`
     <div class="kpi"><div class="v num">${val.toFixed(1)}</div><div class="l">Squad £m</div></div>
     <div class="kpi"><div class="v num">${bank.toFixed(1)}</div><div class="l">Bank £m</div></div>
     <div class="kpi"><div class="v num">${ep.toFixed(0)}</div><div class="l">XI proj</div></div>`;
+}
+(function(){
+  renderKpis();
   const dl=new Date(DATA.meta.deadline);
   const dstr=dl.toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})+', '+dl.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
   const feeds=[DATA.meta.lineups?'predicted XI':'', DATA.meta.odds?'odds':'', DATA.meta.eo_live?'live EO':'EO est'].filter(Boolean).join(' · ');
@@ -386,14 +477,14 @@ document.getElementById('mineonly').onchange=e=>{mineOnly=e.target.checked;rende
 })();
 
 /* My Team */
-(function(){
-  const groups={GK:[],DEF:[],MID:[],FWD:[]}; DATA.squad.forEach(id=>groups[byId[id].pos].push(byId[id]));
-  const startSet=new Set(DATA.starting);
+function renderTeam(){
+  const groups={GK:[],DEF:[],MID:[],FWD:[]}; CUR().squad.forEach(id=>{if(byId[id])groups[byId[id].pos].push(byId[id]);});
+  const startSet=new Set(CUR().starting);
   document.getElementById('pitch').innerHTML=['GK','DEF','MID','FWD'].map(pos=>{
     const cards=groups[pos].sort((a,b)=>(startSet.has(b.i)?1:0)-(startSet.has(a.i)?1:0)).map(p=>{
-      const arm=p.i===DATA.captain?'<span class="arm">C</span>':p.i===DATA.vice?'<span class="arm v">V</span>':'';
+      const arm=p.i===CUR().captain?'<span class="arm">C</span>':p.i===CUR().vice?'<span class="arm v">V</span>':'';
       const b=!startSet.has(p.i);
-      return `<div class="pcard ${p.i===DATA.captain?'cap':''}" style="${b?'opacity:.62':''}">${arm}
+      return `<div class="pcard ${p.i===CUR().captain?'cap':''}" style="${b?'opacity:.62':''}">${arm}
         <div class="cn">${p.n} ${spBadges(p)}</div><div class="cm">${p.tm} · ${fmtM(p.price)} ${b?'· bench':''}</div>
         ${fixCells(p.tm,3)}
         <div class="cstat"><span>Rating</span><b><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></b></div>
@@ -402,16 +493,18 @@ document.getElementById('mineonly').onchange=e=>{mineOnly=e.target.checked;rende
     }).join('');
     return `<div class="line"><h4>${posName[pos]}</h4><div class="cards">${cards}</div></div>`;
   }).join('');
-  const startP=DATA.starting.map(id=>byId[id]);
+  const startP=CUR().starting.map(id=>byId[id]).filter(Boolean);
   const flags=startP.filter(p=>p.pstart===false||['OUT','SUS','INJ','QUES','DBT'].includes(p.inj));
   const weak=[...startP].sort((a,b)=>a.vr-b.vr)[0];
   let notes=[];
   if(flags.length) notes.push(`<b>Minutes watch.</b> ${flags.map(p=>p.n+(p.inj?' ('+p.inj+')':' (predicted sub)')).join(', ')} — worth checking before the deadline.`);
   else notes.push(`<b>All eleven are predicted to start.</b> No minutes worries in your XI right now.`);
-  notes.push(`<b>Armband.</b> Captain ${byId[DATA.captain].n}, vice ${byId[DATA.vice].n}. The Simulator's captaincy table ranks your options by ceiling and floor.`);
+  const cp=byId[CUR().captain], vp=byId[CUR().vice];
+  if(cp&&vp) notes.push(`<b>Armband.</b> Captain ${cp.n}, vice ${vp.n}. The Simulator's captaincy table ranks your options by ceiling and floor.`);
   if(weak) notes.push(`<b>Weakest link.</b> ${weak.n} is your lowest-rated starter at ${weak.vr.toFixed(1)}; the Optimal tab and transfer list below show the best upgrades.`);
   document.getElementById('teaminsight').innerHTML='<h4>Reading the room</h4>'+notes.map(n=>`<p>${n}</p>`).join('');
-})();
+}
+renderTeam();
 
 /* Targets */
 (function(){
@@ -492,13 +585,14 @@ renderFix();
 document.getElementById('legend').innerHTML='<span style="color:var(--muted)">Rating</span><span class="vr vrA">8.5+</span><span class="vr vrB">7+</span><span class="vr vrC">5.5+</span><span class="vr vrD">4+</span><span style="color:var(--faint);margin-left:8px">Trend = net transfers · xGΔ green = under xG (due) · EO~ estimated</span>';
 
 /* Optimal XI — live client-side solver with player locks */
-let optH=3, optLocks=[], chip='none';
+let optH=3, optLocks=[], optExcl=[], optMode='lock', chip='none';
 let GK_CAP=Infinity;   // combined GK cap removed at Jack's request (Bench Boost build wants two playing keepers)
 const FORMS=[[3,4,3],[3,5,2],[4,3,3],[4,4,2],[4,5,1],[5,3,2],[5,4,1]];
-const xpH=p=>(p.xph&&p.xph.length)?p.xph[Math.min(Math.max(optH,1),5)-1]:0;
+const xpH=p=>(p.xph&&p.xph.length)?p.xph[Math.min(Math.max(optH,1),p.xph.length)-1]:0;
 function solveOptimal(){
   const lockedSet=new Set(optLocks);
-  const base=DATA.players.filter(p=>p.xph&&(p.min>=250||p.pstart||mineSet.has(p.i)||lockedSet.has(p.i)));
+  const exSet=new Set(optExcl.filter(id=>!lockedSet.has(id)));
+  const base=DATA.players.filter(p=>p.xph&&!exSet.has(p.i)&&(p.min>=250||p.pstart||mineSet.has(p.i)||lockedSet.has(p.i)));
   const byPos={1:[],2:[],3:[],4:[]}; base.forEach(p=>byPos[p.pt].push(p));
   for(const k in byPos) byPos[k].sort((a,b)=>xpH(b)-xpH(a));
   const lockedP=optLocks.map(id=>byId[id]).filter(Boolean);
@@ -562,7 +656,8 @@ function score(xi,cap){return xi.reduce((s,p)=>s+xpH(p),0)+xpH(cap);}
 /* Bench Boost: all 15 play, so maximise total-squad xP (no GK cap — two playing keepers fall out naturally) */
 function solveBenchBoost(){
   const lockedSet=new Set(optLocks);
-  const base=DATA.players.filter(p=>p.xph&&(p.min>=250||p.pstart||mineSet.has(p.i)||lockedSet.has(p.i)));
+  const exSet=new Set(optExcl.filter(id=>!lockedSet.has(id)));
+  const base=DATA.players.filter(p=>p.xph&&!exSet.has(p.i)&&(p.min>=250||p.pstart||mineSet.has(p.i)||lockedSet.has(p.i)));
   const byPos={1:[],2:[],3:[],4:[]}; base.forEach(p=>byPos[p.pt].push(p));
   for(const k in byPos) byPos[k].sort((a,b)=>xpH(b)-xpH(a));
   const quota={1:2,2:5,3:5,4:3};
@@ -615,12 +710,14 @@ function solveBenchBoost(){
   return {XI:xiAll.map(p=>p.i),BEN:benAll.map(p=>p.i),cap:capP.i,form:`${bestXI.D}-${bestXI.M}-${bestXI.F}`,cost:Math.round(cost*10)/10,score:Math.round(total*10)/10,bb:true};
 }
 function renderLocks(){
-  document.getElementById('optlocks').innerHTML=optLocks.map(id=>{const p=byId[id];return `<span class="lockchip">${p.n} <span style="font-weight:400;color:#6a63c9">${p.tm}</span><button data-id="${id}">✕</button></span>`;}).join('');
+  document.getElementById('optlocks').innerHTML=optLocks.map(id=>{const p=byId[id];return `<span class="lockchip">🔒 ${p.n} <span style="font-weight:400;color:#6a63c9">${p.tm}</span><button data-id="${id}">✕</button></span>`;}).join('');
   document.querySelectorAll('#optlocks button').forEach(b=>b.onclick=()=>{optLocks=optLocks.filter(x=>x!=b.dataset.id);renderLocks();renderOptimal();});
+  document.getElementById('optexcl').innerHTML=optExcl.map(id=>{const p=byId[id];return `<span class="lockchip" style="background:#fbe6e6;color:#c0392b">🚫 ${p.n} <span style="font-weight:400;opacity:.8">${p.tm}</span><button data-id="${id}" style="background:#f3cccc;color:#c0392b">✕</button></span>`;}).join('');
+  document.querySelectorAll('#optexcl button').forEach(b=>b.onclick=()=>{optExcl=optExcl.filter(x=>x!=b.dataset.id);renderLocks();renderOptimal();});
 }
 function renderOptimal(){
   const o=chip==='bb'?solveBenchBoost():solveOptimal(); const warn=document.getElementById('lockwarn');
-  if(!o){warn.textContent='Those locks don’t fit a legal £100m XI together — remove one to continue.';
+  if(!o){warn.textContent=(optExcl.length?'No legal £100m squad with those locks and exclusions — loosen one to continue.':'Those locks don’t fit a legal £100m XI together — remove one to continue.');
     document.getElementById('optkpis').innerHTML='';document.getElementById('optpitch').innerHTML='';document.getElementById('optbench').innerHTML='';return;}
   warn.textContent='';
   const bank=(100-o.cost).toFixed(1);
@@ -644,7 +741,7 @@ function renderOptimal(){
     return `<div class="line"><h4>${posName[pos]}</h4><div class="cards">${cards}</div></div>`;
   }).join('');
   document.getElementById('optbench').innerHTML=`<h4>Bench${chip==='bb'?' · all four score on Bench Boost':''}</h4><p>`+o.BEN.map(id=>{const p=byId[id];return `${p.n} <span style="color:var(--faint)">(${p.tm} ${p.pos} ${fmtM(p.price)}${chip==='bb'?' · '+xpH(p).toFixed(1)+' xP':''})</span>`;}).join(' · ')+'</p>';
-  const sug=DATA.suggestions[optH]||[];
+  const sug=(CUR().suggestions&&CUR().suggestions[optH])||DATA.suggestions[optH]||[];
   document.getElementById('opttransfers').innerHTML= sug.length ? '<table><thead><tr><th class="l">Out</th><th class="l">In</th><th class="l" style="padding-left:14px">In: next 3</th><th>+xP</th></tr></thead><tbody>'+
     sug.map(s=>{const a=byId[s.out],b=byId[s.in];return `<tr><td class="l"><span class="pname" style="color:var(--bad)">${a.n}</span><div class="pmeta">${a.tm} ${a.pos} ${fmtM(a.price)}</div></td><td class="l"><span class="pname" style="color:var(--good)">${b.n}</span> ${availFlag(b)}<div class="pmeta">${b.tm} ${b.pos} ${fmtM(b.price)}</div></td><td class="l">${fixCells(b.tm,3)}</td><td><span class="num up">+${s.delta.toFixed(1)}</span></td></tr>`;}).join('')+'</tbody></table>'
     : '<div style="padding:16px;color:var(--muted)">No positive single move for this window.</div>';
@@ -652,15 +749,19 @@ function renderOptimal(){
 const optSearch=document.getElementById('optsearch'), optResults=document.getElementById('optresults');
 optSearch.oninput=()=>{const q=optSearch.value.toLowerCase().trim();
   if(!q){optResults.classList.remove('on');return;}
-  const rows=DATA.players.filter(p=>(p.n+' '+p.tm).toLowerCase().includes(q)&&!optLocks.includes(p.i)).sort((a,b)=>b.vr-a.vr).slice(0,8);
+  const rows=DATA.players.filter(p=>(p.n+' '+p.tm).toLowerCase().includes(q)&&!optLocks.includes(p.i)&&!optExcl.includes(p.i)).sort((a,b)=>b.vr-a.vr).slice(0,8);
   optResults.innerHTML=rows.map(p=>`<div data-id="${p.i}"><span>${p.n} <span style="color:var(--faint)">${p.tm} · ${p.pos}</span></span><span class="rp">${fmtM(p.price)} · ${p.vr.toFixed(1)}</span></div>`).join('')||'<div style="color:var(--faint)">No match</div>';
+  optResults.classList.toggle('nomatch',!rows.length);
   optResults.classList.add('on');
   optResults.querySelectorAll('div[data-id]').forEach(d=>d.onclick=()=>{const id=+d.dataset.id;
-    if(optLocks.length>=11){return;} if(!optLocks.includes(id))optLocks.push(id);
+    if(optMode==='excl'){ optLocks=optLocks.filter(x=>x!==id); if(!optExcl.includes(id))optExcl.push(id); }
+    else { if(optLocks.length>=11)return; optExcl=optExcl.filter(x=>x!==id); if(!optLocks.includes(id))optLocks.push(id); }
     optSearch.value='';optResults.classList.remove('on');renderLocks();renderOptimal();});
 };
 document.addEventListener('click',e=>{if(!e.target.closest('.lockbar'))optResults.classList.remove('on');});
 document.querySelectorAll('#opthorizon button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#opthorizon button').forEach(x=>x.classList.remove('on'));b.classList.add('on');optH=+b.dataset.h;renderOptimal();});
+document.querySelectorAll('#optmode button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#optmode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');optMode=b.dataset.m;
+  optSearch.placeholder=optMode==='excl'?'Search a player to exclude…':'Search a player to lock into the XI…';});
 document.querySelectorAll('#optchip button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#optchip button').forEach(x=>x.classList.remove('on'));b.classList.add('on');chip=b.dataset.c;renderOptimal();});
 renderLocks(); renderOptimal();
 
@@ -700,7 +801,7 @@ function simulate(xiIds, N){
 }
 function pctile(sorted,q){ const i=Math.min(sorted.length-1,Math.max(0,Math.floor(q*sorted.length))); return sorted[i]; }
 let simLine='mine', simCache=null;
-function simXI(){ return simLine==='opt' ? (DATA.optimal['1']?DATA.optimal['1'].xi:DATA.starting) : DATA.starting; }
+function simXI(){ return simLine==='opt' ? (DATA.optimal['1']?DATA.optimal['1'].xi:CUR().starting) : CUR().starting; }
 function renderSim(){
   const xi=simXI(), N=10000, res=simulate(xi,N);
   const sorted=Float64Array.from(res.totals).sort();
@@ -733,80 +834,467 @@ function renderSim(){
 document.querySelectorAll('#simline button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#simline button').forEach(x=>x.classList.remove('on'));b.classList.add('on');simLine=b.dataset.l;renderSim();});
 let simInit=false;
 
-/* Preseason tracker */
-const INJ_HI=['OUT','SUS','INJ'], INJ_MD=['QUES','DBT'];
-function preFlag(p){
-  if(INJ_HI.includes(p.inj)) return `<span class="badge" style="background:#fbe6e6;color:#c0392b">${p.inj}</span>`;
-  if(INJ_MD.includes(p.inj)) return `<span class="badge" style="background:#fdf0d8;color:#a06a00">${p.inj==='DBT'?'DOUBT':'?'}</span>`;
-  return '';
+/* ---------- Manual squad editor (bridges the pre-deadline gap) ----------
+   FPL only publishes a team's picks after a gameweek deadline. Before the first
+   one there is no public endpoint, so the daily sync cannot see edits made on the
+   FPL site. This lets you set the squad yourself; it is remembered in the page URL,
+   and the automatic sync takes over once the season is under way. */
+let editing=false, editPick=null;
+function hashKey(){return 't'+curE;}
+function readHash(){
+  const h=new URLSearchParams(location.hash.replace(/^#/,''));
+  const t=h.get(hashKey()); if(!t) return null;
+  const ids=t.split(',').map(Number).filter(x=>byId[x]);
+  if(ids.length!==15) return null;
+  const s=(h.get('s'+curE)||'').split(',').map(Number).filter(x=>ids.includes(x));
+  return {squad:ids, starting:s.length===11?s:ids.slice(0,11),
+          captain:+h.get('c'+curE)||ids[0], vice:+h.get('v'+curE)||ids[1]};
 }
-const chanceStr=p=>(p.cop===null||p.cop===undefined)?'—':(p.cop+'%');
-let preInit=false;
-function renderPreseason(){
-  /* A) your squad check */
-  const sq=DATA.squad.map(id=>byId[id]);
-  const issues=sq.filter(p=>INJ_HI.includes(p.inj)||INJ_MD.includes(p.inj)||p.pstart===false);
-  let sc;
-  if(issues.length){
-    sc='<h4>Your squad — worth a look</h4>'+issues.map(p=>{
-      const why=INJ_HI.includes(p.inj)?`<b style="color:var(--bad)">${p.inj}</b>${p.news?' — '+p.news:''}`
-        :INJ_MD.includes(p.inj)?`<b style="color:#a06a00">doubt</b>${p.news?' — '+p.news:''}`
-        :`<b>predicted to be benched</b>`;
-      return `<p><b>${p.n}</b> <span style="color:var(--faint)">${p.tm} ${p.pos}</span> — ${why}</p>`;
-    }).join('');
+function writeHash(){
+  const h=new URLSearchParams(location.hash.replace(/^#/,''));
+  const e=CUR();
+  h.set('t'+curE,e.squad.join(',')); h.set('s'+curE,e.starting.join(','));
+  h.set('c'+curE,e.captain); h.set('v'+curE,e.vice);
+  history.replaceState(null,'','#'+h.toString());
+}
+function clearHash(){
+  const h=new URLSearchParams(location.hash.replace(/^#/,''));
+  ['t','s','c','v'].forEach(k=>h.delete(k+curE));
+  history.replaceState(null,'',h.toString()?('#'+h.toString()):location.pathname);
+}
+function applyHashToEntry(){
+  const o=readHash(); if(!o) return false;
+  const e=CUR(); e._synced=e._synced||{squad:e.squad,starting:e.starting,captain:e.captain,vice:e.vice};
+  e.squad=o.squad; e.starting=o.starting; e.captain=o.captain; e.vice=o.vice;
+  mineSet=new Set(e.squad); return true;
+}
+function isOverridden(){return !!CUR()._synced;}
+function squadIssues(){
+  const e=CUR(), ps=e.squad.map(id=>byId[id]).filter(Boolean), out=[];
+  const cnt={GK:0,DEF:0,MID:0,FWD:0}; ps.forEach(p=>cnt[p.pos]++);
+  const want={GK:2,DEF:5,MID:5,FWD:3};
+  for(const k in want) if(cnt[k]!==want[k]) out.push(`${cnt[k]} ${k} (need ${want[k]})`);
+  const club={}; ps.forEach(p=>club[p.tm]=(club[p.tm]||0)+1);
+  Object.entries(club).filter(([,n])=>n>3).forEach(([t,n])=>out.push(`${n} from ${t} (max 3)`));
+  const cost=ps.reduce((a,p)=>a+p.price,0);
+  if(cost>100.0001) out.push(`£${cost.toFixed(1)}m spent — ${fmtM(cost-100)} over budget`);
+  const xi=e.starting.map(id=>byId[id]).filter(Boolean), xc={GK:0,DEF:0,MID:0,FWD:0};
+  xi.forEach(p=>xc[p.pos]++);
+  if(xi.length!==11) out.push(`${xi.length} starters (need 11)`);
+  else{ if(xc.GK!==1) out.push('XI needs exactly 1 GK');
+        if(xc.DEF<3) out.push('XI needs at least 3 DEF');
+        if(xc.FWD<1) out.push('XI needs at least 1 FWD'); }
+  return out;
+}
+function renderSyncNote(){
+  const started=DATA.meta.season_started, ov=isOverridden();
+  const cost=CUR().squad.map(id=>byId[id]).filter(Boolean).reduce((a,p)=>a+p.price,0);
+  let html;
+  if(ov){
+    html=`<div class="insight" style="border-left-color:var(--accent);margin-top:0"><h4>Showing the team you set here</h4>
+      <p>Saved in this page's link, so it survives a reload and you can bookmark it. Squad value ${fmtM(cost)}.
+      ${started?'':'Once the first deadline passes, FPL publishes your picks and the automatic sync takes over.'}
+      Use <b>Copy for the repo</b> to make it permanent for the daily build.</p></div>`;
+  } else if(!started){
+    html=`<div class="insight" style="border-left-color:var(--d4);margin-top:0"><h4>This is your saved draft, not a live pull</h4>
+      <p>FPL only publishes a team's picks <b>after</b> a gameweek deadline — before the first one there's no public endpoint for it, and the
+      authenticated one needs your login, which the daily cloud run doesn't have. So changes you make on the FPL site can't reach here yet.
+      It starts syncing on its own once GW1 kicks off. Until then, hit <b>Edit my team</b> to set it yourself.</p></div>`;
   } else {
-    sc='<h4>Your squad — all clear</h4><p>No injuries, doubts or predicted benchings across your 15 right now. Nothing to action before the deadline.</p>';
+    html=`<div class="insight" style="border-left-color:var(--good);margin-top:0"><h4>Synced from FPL</h4>
+      <p>Pulled from your entry on the last refresh${DATA.meta.built?' ('+DATA.meta.built+')':''}. Squad value ${fmtM(cost)}.</p></div>`;
   }
-  document.getElementById('pre_squad').innerHTML=sc;
+  document.getElementById('syncnote').innerHTML=html;
+  document.getElementById('btnresetteam').style.display=ov?'inline-block':'none';
+  document.getElementById('btncopyteam').style.display=ov?'inline-block':'none';
+}
+function renderEditor(){
+  const g=document.getElementById('teameditor');
+  if(!editing){g.style.display='none';return;}
+  g.style.display='block';
+  const e=CUR(), startSet=new Set(e.starting);
+  const ps=e.squad.map(id=>byId[id]).filter(Boolean).sort((a,b)=>posOrder[a.pos]-posOrder[b.pos]||(startSet.has(b.i)?1:0)-(startSet.has(a.i)?1:0));
+  const issues=squadIssues();
+  g.innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <b style="font-family:var(--disp)">Set your 15</b>
+      <span style="color:var(--faint);font-size:12px">Swap a player, toggle who starts, set the armband.</span></div>
+    ${issues.length?`<div class="lockwarn" style="margin-bottom:10px">${issues.join(' · ')}</div>`:''}
+    <div>${ps.map(p=>`<div class="planrow">
+      <div><span class="pname">${p.n}</span> <span class="pos-pill">${p.pos}</span>
+        <span class="pmeta">${p.tm} · ${fmtM(p.price)}${startSet.has(p.i)?'':' · bench'}</span></div>
+      <div style="display:flex;gap:5px;align-items:center">
+        <button class="act" style="padding:3px 8px;font-size:11px${startSet.has(p.i)?';border-color:var(--accent);color:var(--accent)':''}" data-st="${p.i}">${startSet.has(p.i)?'Starting':'Bench'}</button>
+        <button class="act" style="padding:3px 8px;font-size:11px${e.captain===p.i?';border-color:var(--accent);color:var(--accent)':''}" data-c="${p.i}">C</button>
+        <button class="act" style="padding:3px 8px;font-size:11px${e.vice===p.i?';border-color:var(--accent);color:var(--accent)':''}" data-v="${p.i}">V</button>
+        <button class="act" style="padding:3px 8px;font-size:11px" data-swap="${p.i}">Swap</button>
+      </div></div>`).join('')}</div>
+    <div style="margin-top:12px;color:var(--muted);font-size:12.5px">Squad value <b>${fmtM(ps.reduce((a,p)=>a+p.price,0))}</b></div>`;
+  const commit=()=>{writeHash();renderSyncNote();renderEditor();renderTeam();renderKpis();render();renderOptimal();planInit=false;simInit=false;};
+  g.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{const id=+b.dataset.st;
+    const e2=CUR(); e2.starting=startSet.has(id)?e2.starting.filter(x=>x!==id):e2.starting.concat(id); commit();});
+  g.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{const id=+b.dataset.c;const e2=CUR();
+    if(e2.vice===id)e2.vice=e2.captain; e2.captain=id; commit();});
+  g.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{const id=+b.dataset.v;const e2=CUR();
+    if(e2.captain===id)e2.captain=e2.vice; e2.vice=id; commit();});
+  g.querySelectorAll('[data-swap]').forEach(b=>b.onclick=()=>{editPick=+b.dataset.swap;openTeamSearch();});
+}
+function openTeamSearch(){
+  const s=document.getElementById('teamsearch'), r=document.getElementById('teamresults'), o=byId[editPick];
+  if(!o)return;
+  s.style.display='block'; s.value=''; s.placeholder=`Replace ${o.n} (${o.pos})…`; s.focus();
+  s.oninput=()=>{const q=s.value.toLowerCase().trim(); if(!q){r.classList.remove('on');return;}
+    const rows=DATA.players.filter(p=>p.pt===o.pt&&!CUR().squad.includes(p.i)&&(p.n+' '+p.tm).toLowerCase().includes(q))
+      .sort((a,b)=>b.vr-a.vr).slice(0,8);
+    r.innerHTML=rows.map(p=>`<div data-id="${p.i}"><span>${p.n} <span style="color:var(--faint)">${p.tm} · ${p.pos}</span></span><span class="rp">${fmtM(p.price)} · ${p.vr.toFixed(1)}</span></div>`).join('')||'<div style="color:var(--faint)">No match</div>';
+    r.classList.toggle('nomatch',!rows.length); r.classList.add('on');
+    r.querySelectorAll('div[data-id]').forEach(d=>d.onclick=()=>{
+      const nid=+d.dataset.id, e=CUR();
+      if(!e._synced) e._synced={squad:e.squad.slice(),starting:e.starting.slice(),captain:e.captain,vice:e.vice};
+      e.squad=e.squad.map(x=>x===editPick?nid:x);
+      e.starting=e.starting.map(x=>x===editPick?nid:x);
+      if(e.captain===editPick)e.captain=nid; if(e.vice===editPick)e.vice=nid;
+      mineSet=new Set(e.squad); editPick=null; s.value=''; s.style.display='none'; r.classList.remove('on');
+      writeHash(); renderSyncNote(); renderEditor(); renderTeam(); renderKpis(); render(); renderOptimal(); planInit=false; simInit=false;});
+  };
+}
+(function(){
+  document.getElementById('btnedit').onclick=()=>{
+    editing=!editing;
+    if(editing&&!CUR()._synced){const e=CUR();e._synced={squad:e.squad.slice(),starting:e.starting.slice(),captain:e.captain,vice:e.vice};writeHash();}
+    document.getElementById('btnedit').textContent=editing?'Done editing':'Edit my team';
+    renderSyncNote(); renderEditor();
+  };
+  document.getElementById('btnresetteam').onclick=()=>{
+    const e=CUR(); if(e._synced){Object.assign(e,e._synced); delete e._synced;}
+    mineSet=new Set(e.squad); clearHash(); editing=false;
+    document.getElementById('btnedit').textContent='Edit my team';
+    document.getElementById('editmsg').textContent='';
+    renderSyncNote(); renderEditor(); renderTeam(); renderKpis(); render(); renderOptimal(); planInit=false; simInit=false;
+  };
+  document.getElementById('btncopyteam').onclick=async()=>{
+    const e=CUR(), startSet=new Set(e.starting);
+    const ordered=[...e.starting,...e.squad.filter(i=>!startSet.has(i))];
+    const payload={entry:e.id,name:e.name,bank:Math.round((100-e.squad.map(i=>byId[i]).filter(Boolean).reduce((a,p)=>a+p.price,0))*10),
+      picks:ordered.map((id,k)=>[id,k+1,id===e.captain?1:0,id===e.vice?1:0])};
+    const txt=JSON.stringify(payload);
+    try{await navigator.clipboard.writeText(txt);document.getElementById('editmsg').textContent='Copied — paste into myteam.json in the repo.';}
+    catch(_){document.getElementById('editmsg').textContent='Copy failed; here it is: '+txt.slice(0,60)+'…';console.log(txt);}
+  };
+  document.addEventListener('click',ev=>{if(!ev.target.closest('#v-team .lockbar'))document.getElementById('teamresults').classList.remove('on');});
+  if(applyHashToEntry()){renderTeam();renderKpis();}
+  renderSyncNote();
+})();
 
-  /* B) availability watch */
-  const sev=p=>INJ_HI.includes(p.inj)?0:1;
-  const avail=DATA.players.filter(p=>(INJ_HI.includes(p.inj)||INJ_MD.includes(p.inj))&&(p.own>=1||p.vr>=6.5||mineSet.has(p.i)))
-    .sort((a,b)=>sev(a)-sev(b)||b.own-a.own);
-  document.getElementById('pre_avail').innerHTML = avail.length ?
-    '<table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>£</th><th>Own%</th><th class="l" style="padding-left:12px">Status</th><th>Chance</th><th class="l" style="padding-left:12px">News</th></tr></thead><tbody>'+
-    avail.slice(0,40).map(p=>`<tr><td class="l"><span class="pname">${p.n}</span> ${mineSet.has(p.i)?'<span class="badge">MINE</span>':''}<div class="pmeta">${p.tm}</div></td><td class="l"><span class="pos-pill">${p.pos}</span></td><td>${N(p.price)}</td><td>${N(p.own)}</td><td class="l" style="padding-left:12px">${preFlag(p)}</td><td>${chanceStr(p)}</td><td class="l" style="padding-left:12px;white-space:normal;max-width:340px;color:var(--muted);font-size:12px">${p.news||'—'}</td></tr>`).join('')+'</tbody></table>'
-    : '<div style="padding:16px;color:var(--muted)">No injury or availability flags on notable players right now.</div>';
+/* ---------- Refresh control + data age ---------- */
+const ACTIONS_URL='https://github.com/studioerimus/fpl-scout/actions/workflows/daily.yml';
+function ageText(){
+  const iso=DATA.meta.built_iso; if(!iso) return {txt:DATA.meta.built||'unknown', cls:''};
+  const mins=Math.max(0,Math.round((Date.now()-new Date(iso).getTime())/60000));
+  const cls=mins<240?'':(mins<1440?'dot-stale':'dot-old');
+  if(mins<60) return {txt:mins+' min ago', cls};
+  if(mins<1440) return {txt:Math.round(mins/60)+' hr ago', cls};
+  return {txt:Math.round(mins/1440)+' day'+(mins>=2880?'s':'')+' ago', cls};
+}
+function paintAge(){
+  const a=ageText();
+  document.getElementById('dataage').innerHTML=`<span class="dot-live ${a.cls}"></span>Data <b>${a.txt}</b>`;
+}
+(function(){
+  document.getElementById('btnfull').href=ACTIONS_URL;
+  document.getElementById('btnfull').title='Opens GitHub Actions — click "Run workflow" to pull your latest team straight away (~1 min)';
+  paintAge(); setInterval(paintAge,60000);
+  const btn=document.getElementById('btnrefresh');
+  btn.onclick=async()=>{
+    btn.disabled=true; const old=btn.textContent; btn.textContent='Checking…';
+    try{
+      const r=await fetch('dash_data.json?cb='+Date.now(),{cache:'no-store'});
+      if(!r.ok) throw new Error('no data file');
+      const j=await r.json();
+      if(j.meta&&j.meta.built_iso&&j.meta.built_iso!==DATA.meta.built_iso){ btn.textContent='New data — reloading'; location.reload(); return; }
+      btn.textContent='Up to date'; setTimeout(()=>{btn.textContent=old;btn.disabled=false;},1800);
+    }catch(e){ location.reload(); }
+  };
+  // team switcher (only shown when more than one team is tracked)
+  if(ENTRIES.length>1){
+    document.getElementById('teamswitch').innerHTML=`<span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em;margin-right:7px">Team</span><select class="fsel" id="entrysel">${ENTRIES.map((e,k)=>`<option value="${k}">${e.name}</option>`).join('')}</select>`;
+    document.getElementById('entrysel').onchange=e=>{
+      curE=+e.target.value; mineSet=new Set(CUR().squad);
+      plan=[]; planGW=0; renderKpis(); renderTeam(); render(); renderOptimal();
+      simInit=false; renderPlanner();
+      const act=document.querySelector('nav.tabs button.on');
+      if(act&&act.dataset.v==='sim'){simInit=true;renderSim();}
+    };
+  }
+})();
 
-  /* D) set-piece duty */
-  const pens=DATA.players.filter(p=>p.pen===1).sort((a,b)=>b.vr-a.vr).slice(0,10);
-  document.getElementById('pre_sp').innerHTML = pens.length ?
-    '<table><thead><tr><th class="l">On duty</th><th class="l">Role</th><th>£</th><th>Rating</th></tr></thead><tbody>'+
-    pens.map(p=>{const roles=['PEN']; if(p.fk&&p.fk<=2)roles.push('FK'); if(p.ck&&p.ck<=2)roles.push('CK'); return `<tr><td class="l"><span class="pname">${p.n}</span><div class="pmeta">${p.tm} ${p.pos}</div></td><td class="l">${roles.join(' · ')}</td><td>${N(p.price)}</td><td><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></td></tr>`;}).join('')+'</tbody></table>'
-    : '<div style="padding:16px;color:var(--muted)">Set-piece orders populate from FPL.</div>';
+/* ---------- Player comparison radar ---------- */
+const CMPC=['#2a78d6','#eb6834','#1baf7a','#4a3aa7'];   // validated all-pairs (CVD + normal vision)
+let cmpSel=[];
+const AX={
+  GK :[['sv90','Saves /90',1],['cs90','Clean sheet /90',1],['xgc90','Conceded /90',-1],['mp','Start %',1],['ppm','Pts per £m',1],['pg','Projected pts',1]],
+  DEF:[['cbrit90','Def acts /90',1],['cs90','Clean sheet /90',1],['xgc90','Conceded /90',-1],['xgi90','Attack /90',1],['mp','Start %',1],['ppm','Pts per £m',1]],
+  MID:[['npxg90','Non-pen xG /90',1],['xa90','xA /90',1],['xgi90','xGI /90',1],['cbrit90','Def acts /90',1],['mp','Start %',1],['ppm','Pts per £m',1]],
+  FWD:[['npxg90','Non-pen xG /90',1],['xa90','xA /90',1],['ga90','G+A /90',1],['thr','Threat',1],['mp','Start %',1],['ppm','Pts per £m',1]],
+  ALL:[['xgi90','xGI /90',1],['cbrit90','Def acts /90',1],['mp','Start %',1],['ppm','Pts per £m',1],['pg','Projected pts',1],['vr','Value rating',1]],
+};
+const pctPool={};
+function pctOf(pos,key,sign,val){
+  const k=pos+'|'+key;
+  if(!pctPool[k]){
+    pctPool[k]=DATA.players.filter(p=>(pos==='ALL'||p.pos===pos)&&(p.min>=450))
+      .map(p=>sign*(p[key]||0)).sort((a,b)=>a-b);
+  }
+  const arr=pctPool[k]; if(!arr.length) return 50;
+  const v=sign*(val||0);
+  let lo=0,hi=arr.length; while(lo<hi){const m=(lo+hi)>>1; if(arr[m]<v)lo=m+1; else hi=m;}   // first >= v
+  let lo2=0,hi2=arr.length; while(lo2<hi2){const m=(lo2+hi2)>>1; if(arr[m]<=v)lo2=m+1; else hi2=m;} // first > v
+  const rank=(lo+lo2)/2;                        // tie-midpoint, so equal values share a fair rank
+  return Math.max(0,Math.min(100,Math.round(100*rank/Math.max(1,arr.length-1))));
+}
+function cmpAxes(){
+  const ps=cmpSel.map(id=>byId[id]).filter(Boolean);
+  if(!ps.length) return {set:AX.ALL,pos:'ALL',mixed:false};
+  const pos=ps[0].pos, mixed=ps.some(p=>p.pos!==pos);
+  return mixed?{set:AX.ALL,pos:'ALL',mixed:true}:{set:AX[pos],pos,mixed:false};
+}
+function renderRadar(){
+  const host=document.getElementById('radar');
+  const {set,pos,mixed}=cmpAxes();
+  const ps=cmpSel.map(id=>byId[id]).filter(Boolean);
+  document.getElementById('cmpaxisnote').innerHTML = !ps.length ? 'Search above to add players.'
+    : mixed ? `Mixed positions selected, so the chart falls back to general axes. Compare like-for-like for the sharpest read.`
+    : `Axes are ${pos==='GK'?'goalkeeper':pos==='DEF'?'defender':pos==='MID'?'midfielder':'forward'} percentiles — 100 means best in position.`;
+  const W=440,H=400,cx=W/2,cy=H/2+6,R=132,n=set.length;
+  const ang=i=>-Math.PI/2+i*2*Math.PI/n;
+  const pt=(i,r)=>[cx+Math.cos(ang(i))*r, cy+Math.sin(ang(i))*r];
+  let g='';
+  [25,50,75,100].forEach(v=>{
+    const d=set.map((_,i)=>pt(i,R*v/100).join(',')).join(' ');
+    g+=`<polygon points="${d}" fill="none" stroke="#e8e8e3" stroke-width="1"/>`;
+  });
+  set.forEach((_,i)=>{const [x,y]=pt(i,R); g+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#e8e8e3" stroke-width="1"/>`;});
+  // axis labels
+  set.forEach((a,i)=>{
+    const [x,y]=pt(i,R+21); const an=ang(i);
+    const anchor=Math.abs(Math.cos(an))<0.25?'middle':(Math.cos(an)>0?'start':'end');
+    g+=`<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="10.5" fill="#6a7079" font-family="Inter,sans-serif">${a[1]}</text>`;
+  });
+  // series
+  ps.forEach((p,k)=>{
+    const col=CMPC[k];
+    const vals=set.map(a=>pctOf(mixed?'ALL':p.pos,a[0],a[2],p[a[0]]));
+    const d=vals.map((v,i)=>pt(i,R*Math.max(v,2)/100).join(',')).join(' ');
+    g+=`<polygon points="${d}" fill="${col}" fill-opacity="0.13" stroke="${col}" stroke-width="2" stroke-linejoin="round" style="pointer-events:none"/>`;
+    vals.forEach((v,i)=>{const [x,y]=pt(i,R*Math.max(v,2)/100);
+      g+=`<circle cx="${x}" cy="${y}" r="4.5" fill="${col}" stroke="#fff" stroke-width="2" class="rdot" data-t="${p.n} · ${set[i][1]}" data-v="${v}th pct · ${(p[set[i][0]]||0).toFixed(2)}"/>`;});
+  });
+  host.innerHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" height="auto" role="img" aria-label="Player comparison radar">${g}</svg><div class="rtip" id="rtip"></div>`;
+  const tip=document.getElementById('rtip');
+  host.querySelectorAll('.rdot').forEach(c=>{
+    c.style.cursor='pointer';
+    c.onmouseenter=e=>{tip.innerHTML=`<b>${c.dataset.t}</b><br>${c.dataset.v}`;tip.style.opacity='1';};
+    c.onmousemove=e=>{tip.style.left=(e.clientX+13)+'px';tip.style.top=(e.clientY-10)+'px';};
+    c.onmouseleave=()=>{tip.style.opacity='0';};
+  });
+  // one combined table: percentile beside the actual value (accessible read of the chart)
+  const head='<table><thead><tr><th class="l">Stat</th>'+ps.map((p,k)=>`<th><span class="swatch" style="background:${CMPC[k]}"></span>${p.n}</th>`).join('')+'</tr></thead><tbody>';
+  const sub=t=>`<tr><td class="l" colspan="${ps.length+1}" style="font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);padding-top:13px">${t}</td></tr>`;
+  const axisRows=set.map(a=>`<tr><td class="l" style="font-size:12px">${a[1]}</td>`+ps.map(p=>{
+      const v=pctOf(mixed?'ALL':p.pos,a[0],a[2],p[a[0]]);
+      return `<td><span class="num" style="font-weight:600">${v}</span><span style="color:var(--faint);font-size:11.5px"> · ${(p[a[0]]||0).toFixed(2)}</span></td>`;}).join('')+'</tr>').join('');
+  const metaRows=[['Club',p=>p.tm],['Price',p=>fmtM(p.price)],['Owned',p=>p.own.toFixed(1)+'%'],
+      ['Rating',p=>`<span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span>`],
+      ['Start likelihood',p=>Math.round(p.mp*100)+'%'],
+      ['Projected pts · '+HZ+'GW',p=>(p.xph?p.xph[HZ-1]:0).toFixed(1)]]
+    .map(r=>`<tr><td class="l" style="font-size:12px;color:var(--muted)">${r[0]}</td>`+ps.map(p=>`<td>${r[1](p)}</td>`).join('')+'</tr>').join('');
+  document.getElementById('cmptable').innerHTML = ps.length
+    ? head+sub('Percentile in position · actual value')+axisRows+sub('Context')+metaRows+'</tbody></table>'
+    : '<div style="padding:16px;color:var(--muted)">No players selected.</div>';
+}
+function renderCmpChips(){
+  document.getElementById('cmpchips').innerHTML=cmpSel.map((id,k)=>{const p=byId[id];
+    return `<span class="cmpchip" style="background:${CMPC[k]}">${p.n}<span style="font-weight:400;opacity:.85">${p.tm} ${p.pos}</span><button data-id="${id}">✕</button></span>`;}).join('')
+    ||'<span style="color:var(--faint);font-size:12.5px">Nobody selected yet — add up to four players.</span>';
+  document.querySelectorAll('#cmpchips button').forEach(b=>b.onclick=()=>{cmpSel=cmpSel.filter(x=>x!=b.dataset.id);renderCmpChips();renderRadar();});
+}
+(function(){
+  const s=document.getElementById('cmpsearch'), r=document.getElementById('cmpresults');
+  s.oninput=()=>{const q=s.value.toLowerCase().trim();
+    if(!q){r.classList.remove('on');return;}
+    const rows=DATA.players.filter(p=>(p.n+' '+p.tm).toLowerCase().includes(q)&&!cmpSel.includes(p.i)).sort((a,b)=>b.vr-a.vr).slice(0,8);
+    r.innerHTML=rows.map(p=>`<div data-id="${p.i}"><span>${p.n} <span style="color:var(--faint)">${p.tm} · ${p.pos}</span></span><span class="rp">${fmtM(p.price)} · ${p.vr.toFixed(1)}</span></div>`).join('')||'<div style="color:var(--faint)">No match</div>';
+    r.classList.toggle('nomatch',!rows.length);
+    r.classList.add('on');
+    r.querySelectorAll('div[data-id]').forEach(d=>d.onclick=()=>{
+      if(cmpSel.length>=4)return; const id=+d.dataset.id;
+      if(!cmpSel.includes(id))cmpSel.push(id);
+      s.value='';r.classList.remove('on');renderCmpChips();renderRadar();});
+  };
+  document.addEventListener('click',e=>{if(!e.target.closest('#v-compare .lockbar'))r.classList.remove('on');});
+})();
+let cmpInit=false;
 
-  /* E) ownership momentum */
-  const mom=DATA.players.filter(p=>Math.abs(p.net||0)>=1000).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net)).slice(0,10);
-  document.getElementById('pre_mom').innerHTML = mom.length ?
-    '<table><thead><tr><th class="l">Player</th><th>Own%</th><th class="l" style="padding-left:12px">Trend</th></tr></thead><tbody>'+
-    mom.map(p=>`<tr><td class="l"><span class="pname">${p.n}</span><div class="pmeta">${p.tm} ${p.pos}</div></td><td>${N(p.own)}</td><td class="l" style="padding-left:12px">${momCell(p)}</td></tr>`).join('')+'</tbody></table>'
-    : '<div style="padding:16px;color:var(--muted)">Transfer momentum builds once the game opens. Big ownership shifts show here.</div>';
+/* ---------- 6-week transfer planner ---------- */
+let plan=[], planGW=0, planPick=null;
+const xg1=(p,k)=>(p&&p.xpg&&p.xpg.length>k)?p.xpg[k]:0;
+function squadAt(k){
+  let ids=CUR().squad.slice();
+  plan.filter(m=>m.gw<=k).forEach(m=>{const i=ids.indexOf(m.out); if(i>=0) ids[i]=m.in;});
+  return ids;
+}
+function bestXI(ids,k){
+  const ps=ids.map(id=>byId[id]).filter(Boolean);
+  const byP={1:[],2:[],3:[],4:[]}; ps.forEach(p=>byP[p.pt].push(p));
+  for(const q in byP) byP[q].sort((a,b)=>xg1(b,k)-xg1(a,k));
+  let best=null;
+  for(const [D,M,F] of FORMS){
+    if(!byP[1][0]||byP[2].length<D||byP[3].length<M||byP[4].length<F) continue;
+    const xi=[byP[1][0],...byP[2].slice(0,D),...byP[3].slice(0,M),...byP[4].slice(0,F)];
+    const s=xi.reduce((a,p)=>a+xg1(p,k),0);
+    if(!best||s>best.s) best={xi,s,form:`${D}-${M}-${F}`};
+  }
+  if(!best) return {xi:[],pts:0,cap:null,form:'—'};
+  const cap=best.xi.reduce((a,b)=>xg1(b,k)>xg1(a,k)?b:a,best.xi[0]);
+  return {xi:best.xi,pts:best.s+xg1(cap,k),cap,form:best.form};
+}
+function planEconomy(){
+  // free transfers: 1 to start, +1 per week, capped at 5; extras cost 4 pts
+  let ft=1, bank=(CUR().bank||0), hits=[], banks=[];
+  for(let k=0;k<HZ;k++){
+    if(k>0) ft=Math.min(5,ft+1);
+    const wk=plan.filter(m=>m.gw===k);
+    wk.forEach(m=>{const o=byId[m.out],i=byId[m.in]; if(o&&i) bank+=o.price-i.price;});
+    const extra=Math.max(0,wk.length-ft);
+    hits.push(extra*4); ft=Math.max(0,ft-wk.length); banks.push(bank);
+  }
+  return {hits,banks,ftLeft:ft};
+}
+function planValid(gw,outId,inId){
+  const o=byId[outId],i=byId[inId];
+  if(!o||!i) return 'Unknown player.';
+  if(o.pt!==i.pt) return `${i.n} is a ${i.pos}, ${o.n} is a ${o.pos} — must match.`;
+  const ids=squadAt(gw); if(ids.includes(inId)) return `${i.n} is already in that squad.`;
+  const after=ids.map(x=>x===outId?inId:x);
+  const clubs={}; after.forEach(x=>{const p=byId[x]; if(p)clubs[p.tm]=(clubs[p.tm]||0)+1;});
+  if(clubs[i.tm]>3) return `That would be four from ${i.tm} — max is three.`;
+  const ec=planEconomy(); const bankAt=gw>0?ec.banks[gw-1]:(CUR().bank||0);
+  if(i.price>o.price+bankAt+1e-9) return `Not enough money — ${i.n} costs ${fmtM(i.price)}, you'd have ${fmtM(o.price+bankAt)}.`;
+  return null;
+}
+function renderPlanner(){
+  const ec=planEconomy();
+  let total=0, totHits=0;
+  const wk=[];
+  for(let k=0;k<HZ;k++){ const b=bestXI(squadAt(k),k); wk.push(b); total+=b.pts; totHits+=ec.hits[k]; }
+  document.getElementById('plangw').innerHTML=wk.map((b,k)=>`<button class="gwcard ${k===planGW?'on':''}" data-k="${k}">
+      <div class="g">GW${GWS[k]!=null?GWS[k]:k+1}</div><div class="v">${b.pts.toFixed(1)}</div>
+      <div class="h">${ec.hits[k]?('−'+ec.hits[k]+' hit'):''}</div></button>`).join('');
+  document.querySelectorAll('#plangw .gwcard').forEach(c=>c.onclick=()=>{planGW=+c.dataset.k;planPick=null;renderPlanner();});
+  const net=total-totHits;
+  document.getElementById('plankpis').innerHTML=`
+    <div class="kpi" style="text-align:left"><div class="v num">${net.toFixed(1)}</div><div class="l">Net pts · ${HZ}GW</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num">${total.toFixed(1)}</div><div class="l">Projected</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num" style="${totHits?'color:var(--bad)':''}">${totHits?'−'+totHits:'0'}</div><div class="l">Hits</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num">${(ec.banks[HZ-1]||0).toFixed(1)}</div><div class="l">Bank £m end</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num">${ec.ftLeft}</div><div class="l">Free left</div></div>`;
+  // squad for the selected week
+  const gwLabel=GWS[planGW]!=null?GWS[planGW]:planGW+1;
+  document.getElementById('plansqhead').textContent=`Squad · GW${gwLabel}`;
+  const ids=squadAt(planGW), b=wk[planGW], xiSet=new Set(b.xi.map(p=>p.i));
+  const ordered=ids.map(id=>byId[id]).filter(Boolean).sort((a,b2)=>(posOrder[a.pos]-posOrder[b2.pos])||xg1(b2,planGW)-xg1(a,planGW));
+  document.getElementById('plansquad').innerHTML='<table><thead><tr><th class="l">Player</th><th class="l">Fixture</th><th>xP</th><th></th></tr></thead><tbody>'+
+    ordered.map(p=>{const run=(DATA.teams[p.tm]&&DATA.teams[p.tm].runs)||[];
+      const f=run.find(r=>r.gw===GWS[planGW])||run[planGW];
+      const fc=f?`<span class="fcell ${dcls(f.d)}">${f.opp}<small>${f.h?'H':'A'}</small></span>`:'<span class="pmeta">blank</span>';
+      const isCap=b.cap&&p.i===b.cap.i;
+      return `<tr style="${xiSet.has(p.i)?'':'opacity:.55'}"><td class="l"><span class="pname">${p.n}</span>${isCap?'<span class="badge p">C</span>':''}${xiSet.has(p.i)?'':'<span class="badge">bench</span>'}<div class="pmeta">${p.tm} ${p.pos} ${fmtM(p.price)}</div></td>
+        <td class="l">${fc}</td><td>${N(xg1(p,planGW))}</td>
+        <td><button class="act" style="padding:3px 9px;font-size:11.5px" data-sw="${p.i}">Swap</button></td></tr>`;}).join('')+'</tbody></table>';
+  document.querySelectorAll('#plansquad button[data-sw]').forEach(bt=>bt.onclick=()=>{planPick=+bt.dataset.sw;openPlanSearch();});
+  // planned moves
+  document.getElementById('planmoves').innerHTML= plan.length ?
+    plan.slice().sort((a,b2)=>a.gw-b2.gw).map(m=>{const o=byId[m.out],i=byId[m.in];
+      return `<div class="moveline"><b>GW${GWS[m.gw]!=null?GWS[m.gw]:m.gw+1}</b>
+        <span class="tagout">${o?o.n:'?'}</span><span style="color:var(--faint)">→</span><span class="tagin">${i?i.n:'?'}</span>
+        <span style="color:var(--faint);margin-left:auto">${o&&i?((i.price-o.price)>=0?'+':'')+(i.price-o.price).toFixed(1)+'m':''}</span>
+        <button class="act" style="padding:2px 8px;font-size:11px" data-rm="${m.gw}|${m.out}">✕</button></div>`;}).join('')
+    : '<div style="padding:14px 0;color:var(--muted);font-size:12.5px">No moves planned. Hit Swap on any player to try one.</div>';
+  document.querySelectorAll('#planmoves button[data-rm]').forEach(bt=>bt.onclick=()=>{
+    const [g,o]=bt.dataset.rm.split('|'); plan=plan.filter(m=>!(m.gw==g&&m.out==o)); renderPlanner();});
+}
+function openPlanSearch(){
+  const s=document.getElementById('plansearch'), r=document.getElementById('planresults');
+  const o=byId[planPick]; if(!o) return;
+  s.style.display='block'; s.value=''; s.placeholder=`Replace ${o.n} (${o.pos}) from GW${GWS[planGW]!=null?GWS[planGW]:planGW+1}…`; s.focus();
+  document.getElementById('planwarn').textContent='';
+  s.oninput=()=>{const q=s.value.toLowerCase().trim(); if(!q){r.classList.remove('on');return;}
+    const rows=DATA.players.filter(p=>p.pt===o.pt&&(p.n+' '+p.tm).toLowerCase().includes(q))
+      .sort((a,b)=>(b.xph?b.xph[HZ-1]:0)-(a.xph?a.xph[HZ-1]:0)).slice(0,8);
+    r.innerHTML=rows.map(p=>`<div data-id="${p.i}"><span>${p.n} <span style="color:var(--faint)">${p.tm} · ${p.pos}</span></span><span class="rp">${fmtM(p.price)} · ${(p.xph?p.xph[HZ-1]:0).toFixed(1)}</span></div>`).join('')||'<div style="color:var(--faint)">No match</div>';
+    r.classList.toggle('nomatch',!rows.length);
+    r.classList.add('on');
+    r.querySelectorAll('div[data-id]').forEach(d=>d.onclick=()=>{
+      const inId=+d.dataset.id, err=planValid(planGW,planPick,inId);
+      if(err){document.getElementById('planwarn').textContent=err;return;}
+      plan=plan.filter(m=>!(m.gw===planGW&&m.out===planPick));
+      plan.push({gw:planGW,out:planPick,in:inId});
+      planPick=null; s.value=''; s.style.display='none'; r.classList.remove('on');
+      document.getElementById('planwarn').textContent=''; renderPlanner();});
+  };
+}
+document.getElementById('planreset').onclick=()=>{plan=[];planPick=null;document.getElementById('planwarn').textContent='';document.getElementById('plansearch').style.display='none';renderPlanner();};
+document.addEventListener('click',e=>{if(!e.target.closest('#v-planner .lockbar')){document.getElementById('planresults').classList.remove('on');}});
+let planInit=false;
 
-  /* C) predicted XI risk */
-  const haveLU=DATA.meta.lineups;
-  const risk=DATA.players.filter(p=>p.pstart===false&&(p.own>=5||p.vr>=7||mineSet.has(p.i))).sort((a,b)=>b.vr-a.vr).slice(0,20);
-  document.getElementById('pre_xi').innerHTML = !haveLU ? '<div style="padding:16px;color:var(--muted)">Predicted XIs populate from Rotowire as they post them, closer to each kickoff.</div>'
-    : risk.length ? '<table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>£</th><th>Own%</th><th>Rating</th><th class="l" style="padding-left:12px">Note</th></tr></thead><tbody>'+
-      risk.map(p=>`<tr><td class="l"><span class="pname">${p.n}</span> ${mineSet.has(p.i)?'<span class="badge">MINE</span>':''}<div class="pmeta">${p.tm}</div></td><td class="l"><span class="pos-pill">${p.pos}</span></td><td>${N(p.price)}</td><td>${N(p.own)}</td><td><span class="vr vr${p.tier}">${p.vr.toFixed(1)}</span></td><td class="l" style="padding-left:12px;color:var(--muted);font-size:12px">Outside predicted XI</td></tr>`).join('')+'</tbody></table>'
-      : '<div style="padding:16px;color:var(--muted)">Every notable player is currently in their predicted XI.</div>';
-
-  /* F) new / unproven — friendly columns light up when the feed is wired */
-  const hasFr=DATA.players.some(p=>p.fmin!=null);
-  const frHead=hasFr?'<th>Fr min</th><th>Fr G</th><th>Fr A</th>':'';
-  const frCells=p=>hasFr?`<td>${p.fmin??'—'}</td><td>${p.fg??0}</td><td>${p.fa??0}</td>`:'';
-  const neu=DATA.players.filter(p=>p.min===0&&p.price>=5.5).sort((a,b)=>b.price-a.price);
-  document.getElementById('pre_new').innerHTML = neu.length ?
-    '<table><thead><tr><th class="l">Player</th><th class="l">Pos</th><th>£</th><th>Own%</th><th class="l" style="padding-left:12px">Predicted</th>'+frHead+'</tr></thead><tbody>'+
-    neu.slice(0,30).map(p=>{const pr=p.pstart===true?'<span class="badge p">XI</span>':p.pstart===false?'<span class="badge" style="background:#eceef0;color:#8a9098">bench</span>':'<span style="color:var(--faint)">—</span>'; return `<tr><td class="l"><span class="pname">${p.n}</span> ${mineSet.has(p.i)?'<span class="badge">MINE</span>':''} ${preFlag(p)}<div class="pmeta">${p.tm}</div></td><td class="l"><span class="pos-pill">${p.pos}</span></td><td>${N(p.price)}</td><td>${N(p.own)}</td><td class="l" style="padding-left:12px">${pr}</td>${frCells(p)}</tr>`;}).join('')+'</tbody></table>'
-    : '<div style="padding:16px;color:var(--muted)">No priced-up players without minutes to flag.</div>';
-
-  document.getElementById('pre_note').innerHTML = hasFr
-    ? '<span style="color:var(--faint)">Friendly minutes, goals and assists are live. Minutes feed nailedness; goals are context only, not projection inputs.</span>'
-    : '<span style="color:var(--faint)">Friendly minutes, goals and assists will appear here once the friendly feed is wired. Until then the tracker reads FPL fitness, Rotowire predicted XIs and set-piece duty.</span>';
+/* ---------- Model accuracy ---------- */
+let accInit=false;
+function renderAccuracy(){
+  const A=DATA.accuracy||{};
+  const big=document.getElementById('accbig'), body=document.getElementById('accbody');
+  if(!A.gws){
+    big.innerHTML='';
+    body.innerHTML=`<div class="insight" style="border-left-color:var(--d4)"><h4>Nothing scored yet</h4>
+      <p>Projections get sealed in the hour before each deadline and scored once the gameweek settles, so the first numbers appear after GW${DATA.meta.start_gw} finishes.</p>
+      <p>Until there's a record, projections run uncorrected. Corrections only strengthen as evidence builds, so early weeks won't swing the model around on a small sample.</p></div>`;
+    return;
+  }
+  const o=A.overall||{};
+  big.innerHTML=`
+    <div class="kpi" style="text-align:left"><div class="v num">${A.gws}</div><div class="l">Gameweeks scored</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num">${(o.mae||0).toFixed(2)}</div><div class="l">Avg error · pts</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num" style="color:${Math.abs(o.bias||0)<0.2?'var(--good)':'var(--d4)'}">${(o.bias||0)>0?'+':''}${(o.bias||0).toFixed(2)}</div><div class="l">Bias · pts</div></div>
+    <div class="kpi" style="text-align:left"><div class="v num">${o.act_total||0}</div><div class="l">Actual vs ${Math.round(o.proj_total||0)} projected</div></div>`;
+  const P=A.by_pos||{}, C=A.calibration||{};
+  const posRows=['GK','DEF','MID','FWD'].filter(k=>P[k]).map(k=>{
+    const v=P[k], c=C[k]||1, off=Math.abs(c-1);
+    const tag=off<0.02?'<span style="color:var(--faint)">no change</span>'
+      :`<span style="color:${c<1?'var(--bad)':'var(--good)'}">${c<1?'trimmed':'raised'} ${Math.round(off*100)}%</span>`;
+    return `<tr><td class="l"><b>${k}</b></td><td>${v.started||0}</td><td>${(v.mae_started!=null?v.mae_started:v.mae).toFixed(2)}</td>
+      <td>${v.ratio_started!=null?v.ratio_started.toFixed(2):'—'}</td><td>${c.toFixed(3)}</td><td class="l" style="padding-left:12px">${tag}</td></tr>`;}).join('');
+  const mm=(A.minutes_model||[]).map(m=>{
+    const gap=Math.abs(m.predicted-m.actual);
+    return `<tr><td class="l">${m.band} predicted</td><td>${m.n}</td><td>${m.predicted.toFixed(2)}</td><td>${m.actual.toFixed(2)}</td>
+      <td class="l" style="padding-left:12px;color:${gap<0.06?'var(--good)':'var(--d4)'}">${gap<0.06?'well judged':'off by '+Math.round(gap*100)+'pts'}</td></tr>`;}).join('');
+  const gwRows=(A.per_gw||[]).slice().reverse().map(g=>{
+    const sq=(g.squads||[])[0]||{};
+    return `<tr><td class="l"><b>GW${g.gw}</b></td><td>${(g.mae||0).toFixed(2)}</td><td>${Math.round(g.proj_total||0)}</td><td>${g.act_total||0}</td>
+      <td>${sq.proj!=null?sq.proj.toFixed(1):'—'}</td><td>${sq.act!=null?sq.act:'—'}</td>
+      <td class="l" style="padding-left:12px">${sq.captain?`${sq.captain} <span class="pmeta">${sq.captain_pts} pts${sq.best_captain&&sq.best_captain!==sq.captain?` · best was ${sq.best_captain} (${sq.best_captain_pts})`:' · best pick'}</span>`:'—'}</td></tr>`;}).join('');
+  const cap=A.captain;
+  body.innerHTML=`
+    <h3 class="sec" style="margin-top:6px">Points if he starts, by position</h3>
+    <p class="secn">A projection is two models multiplied: how likely he plays, and what he scores if he does. They're measured apart, because they go wrong for different reasons. The correction is what's now applied to future projections.</p>
+    <div class="tblwrap"><table><thead><tr><th class="l">Pos</th><th>Starts</th><th>Avg error</th><th>Actual / projected</th><th>Correction</th><th class="l" style="padding-left:12px">Effect</th></tr></thead><tbody>${posRows}</tbody></table></div>
+    <h3 class="sec" style="margin-top:22px">Minutes model</h3>
+    <p class="secn">Of players given each start likelihood, how many actually started. Close numbers mean the nailedness read is sound.</p>
+    <div class="tblwrap"><table><thead><tr><th class="l">Band</th><th>Players</th><th>Predicted</th><th>Actual</th><th class="l" style="padding-left:12px">Verdict</th></tr></thead><tbody>${mm}</tbody></table></div>
+    ${cap?`<div class="insight" style="margin-top:18px"><h4>Captaincy</h4><p>Best available armband picked <b>${cap.picked_best} of ${cap.of}</b> times, leaving <b>${cap.points_left_behind}</b> points on the table. Perfect hindsight is impossible; this is here to show whether the picks are systematically timid or wild.</p></div>`:''}
+    <h3 class="sec" style="margin-top:22px">Week by week</h3>
+    <div class="tblwrap"><table><thead><tr><th class="l">GW</th><th>Avg error</th><th>Projected</th><th>Actual</th><th>Your XI proj</th><th>Your XI got</th><th class="l" style="padding-left:12px">Captain</th></tr></thead><tbody>${gwRows}</tbody></table></div>`;
 }
 
 /* Tabs */
-document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');if(b.dataset.v==='sim'&&!simInit){simInit=true;renderSim();}if(b.dataset.v==='preseason'&&!preInit){preInit=true;renderPreseason();}});
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');if(b.dataset.v==='sim'&&!simInit){simInit=true;renderSim();}if(b.dataset.v==='compare'&&!cmpInit){cmpInit=true;renderCmpChips();renderRadar();}if(b.dataset.v==='planner'&&!planInit){planInit=true;renderPlanner();}if(b.dataset.v==='accuracy'&&!accInit){accInit=true;renderAccuracy();}});
 
 headRow(); render();
 </script>

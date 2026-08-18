@@ -36,20 +36,48 @@ json.dump(get('https://fantasy.premierleague.com/api/fixtures/'), open(path('fpl
 print('fetched bootstrap', len(slim['elements']), 'players + fixtures')
 
 # ---- 2. team name + (post-GW1) live picks, all public, no login ----
-try:
-    entry = get(f'https://fantasy.premierleague.com/api/entry/{ENTRY}/')
-    mt = json.load(open(path('myteam.json'))) if os.path.exists(path('myteam.json')) else {'entry': ENTRY}
-    mt['name'] = entry.get('name') or mt.get('name')
-    cur = entry.get('current_event')
-    if cur:  # season under way -> picks are public
-        picks = get(f'https://fantasy.premierleague.com/api/entry/{ENTRY}/event/{cur}/picks/')
-        mt['picks'] = [[p['element'], p['position'], 1 if p['is_captain'] else 0, 1 if p['is_vice_captain'] else 0]
-                       for p in picks['picks']]
-        mt['bank'] = picks.get('entry_history', {}).get('bank', mt.get('bank', 0))
-    json.dump(mt, open(path('myteam.json'), 'w'))
-    print('team synced:', mt.get('name'), '(picks live)' if cur else '(pre-season: kept saved picks)')
-except Exception as ex:
-    print('team sync warning (kept previous):', ex)
+# teams.json = ["184589", 999999, ...]  (first is the default shown). Falls back to ENTRY.
+TEAM_IDS = []
+if os.path.exists(path('teams.json')):
+    try:
+        TEAM_IDS = [int(str(x).strip()) for x in json.load(open(path('teams.json'))) if str(x).strip()]
+    except Exception as ex:
+        print('teams.json unreadable, using default entry:', ex)
+if not TEAM_IDS:
+    TEAM_IDS = [ENTRY]
+
+prev_all = {}
+if os.path.exists(path('myteams.json')):
+    try: prev_all = {e.get('entry'): e for e in json.load(open(path('myteams.json')))}
+    except Exception: prev_all = {}
+if os.path.exists(path('myteam.json')):
+    try:
+        _m = json.load(open(path('myteam.json')))
+        prev_all.setdefault(_m.get('entry'), _m)
+    except Exception: pass
+
+all_teams = []
+for tid_ in TEAM_IDS:
+    mt = dict(prev_all.get(tid_) or {'entry': tid_})
+    mt['entry'] = tid_
+    try:
+        entry = get(f'https://fantasy.premierleague.com/api/entry/{tid_}/')
+        mt['name'] = entry.get('name') or mt.get('name')
+        cur = entry.get('current_event')
+        if cur:  # season under way -> picks are public
+            picks = get(f'https://fantasy.premierleague.com/api/entry/{tid_}/event/{cur}/picks/')
+            mt['picks'] = [[p['element'], p['position'], 1 if p['is_captain'] else 0, 1 if p['is_vice_captain'] else 0]
+                           for p in picks['picks']]
+            mt['bank'] = picks.get('entry_history', {}).get('bank', mt.get('bank', 0))
+        print('team synced:', tid_, mt.get('name'), '(picks live)' if cur else '(pre-season: kept saved picks)')
+    except Exception as ex:
+        print(f'team {tid_} sync warning (kept previous):', ex)
+    if mt.get('picks'): all_teams.append(mt)
+
+if all_teams:
+    json.dump(all_teams, open(path('myteams.json'), 'w'))
+    json.dump(all_teams[0], open(path('myteam.json'), 'w'))   # primary, back-compat
+print('teams tracked:', [t.get('entry') for t in all_teams])
 
 # ---- 2c. live feeds: predicted lineups (Rotowire) + odds (the-odds-api, Oddschecker fallback) ----
 NAMEMAP = {'arsenal':'ARS','aston villa':'AVL','bournemouth':'BOU','brentford':'BRE','brighton':'BHA',
@@ -183,6 +211,14 @@ try:
     scrape_feeds()
 except Exception as e:
     STATUS['fatal'] = str(e)[:200]; print('feeds step error (kept seeded):', e)
+# probe: does the FPL API allow direct browser calls (CORS)? decides if live in-page refresh is possible
+try:
+    _r = urllib.request.urlopen(urllib.request.Request(
+        'https://fantasy.premierleague.com/api/bootstrap-static/',
+        headers={**UA, 'Origin': 'https://studioerimus.github.io'}), timeout=30)
+    STATUS['fpl_cors'] = _r.headers.get('Access-Control-Allow-Origin') or 'absent'
+except Exception as e:
+    STATUS['fpl_cors'] = 'probe failed: '+str(e)[:80]
 STATUS['ts'] = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
 json.dump(STATUS, open(path('feeds_status.json'), 'w'), indent=2)
 print('feeds_status:', json.dumps(STATUS))
@@ -194,6 +230,14 @@ os.environ['BUILD_STAMP'] = datetime.datetime.utcnow().strftime('%d %b %H:%M UTC
 subprocess.run([sys.executable, path('build_dashboard.py')], check=True)
 # serve at the Pages root too
 import shutil; shutil.copy(path('fpl_dashboard.html'), path('index.html'))
+
+# ---- 3b. results tracker: seal predictions before the deadline, score finished gameweeks ----
+try:
+    import tracker
+    _dash = json.load(open(path('dash_data.json')))
+    tracker.run(d['events'], _dash, force_freeze=os.environ.get('RUN_MODE') == 'freeze')
+except Exception as ex:
+    print('tracker warning (build unaffected):', ex)
 
 # ---- 4. what-changed note (squad-first, ruthless) ----
 def load(n): return json.load(open(path(n))) if os.path.exists(path(n)) else None

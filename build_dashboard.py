@@ -6,7 +6,7 @@ optional lineups.json (Rotowire), odds.json (Oddschecker), eo.json (LiveFPL).
 Folds predicted lineups / injuries / odds into ratings + rolling xP, runs an ILP
 optimiser for the best legal XV per horizon (1-5), and injects into scout_template.html.
 """
-import json, os, re, unicodedata
+import json, os, re, unicodedata, datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 def load(name, default=None):
@@ -24,6 +24,13 @@ teams = {t['id']: {'short': t['short_name'], 'name': t['name']} for t in d['team
 POS = {1:'GK',2:'DEF',3:'MID',4:'FWD'}
 
 MT = load('myteam.json', None)
+# multi-team: myteams.json is a list of entries (id/name/picks/bank). Falls back to the single team.
+ENTRIES = load('myteams.json', None)
+if not ENTRIES and MT and MT.get('picks'):
+    ENTRIES = [MT]
+ENTRIES = [e for e in (ENTRIES or []) if e.get('picks')]
+if ENTRIES:
+    MT = ENTRIES[0]
 if MT and MT.get('picks'):
     _pk = MT['picks']
     SQUAD    = [p[0] for p in _pk]
@@ -36,6 +43,7 @@ else:
     STARTING = [496,8,201,469,208,40,368,426,525,411,346]
     CAPTAIN, VICE, BANK = 411, 496, 0.0
 
+HORIZON = 6                          # planning window: next 6 gameweeks
 nxt = [e['id'] for e in d['events'] if e.get('is_next')]
 start_gw = nxt[0] if nxt else next((e['id'] for e in d['events'] if not e.get('finished')), 1)
 upcoming = [e['id'] for e in d['events'] if e['id'] >= start_gw][:8]
@@ -159,16 +167,21 @@ _est=[p for p in players if p['min']>=1000]
 _mt=(sum(p['_talent'] for p in _est)/len(_est)) if _est else 1.0
 _me=(sum(p['ep'] for p in _est)/len(_est)) if _est else 1.0
 _scale=(_me/_mt) if _mt else 1.0
+ACC=load('accuracy.json',{}) or {}
+CALIB=ACC.get('calibration',{}) or {}      # learned from sealed predictions vs actual results
 for p in players:
     blended=0.5*(p['_talent']*_scale)+0.5*p['ep']
+    blended*=CALIB.get(p['pos'],1.0)        # correction earned from the record, not guessed
     p['pg']=round(blended,2)
-    runs=team_runs(p['tid'],5); om=gw1_mult(p['pt'],p['tm']); mp=p['mp']
-    xph=[]; cum=0.0
+    runs=team_runs(p['tid'],HORIZON); om=gw1_mult(p['pt'],p['tm']); mp=p['mp']
+    xph=[]; xpg=[]; cum=0.0
     for k,r in enumerate(runs):
         m=(om if (om is not None and k==0) else FDRM.get(r['d'],1.0))
-        cum+=mp*blended*m; xph.append(round(cum,2))
-    while len(xph)<5: xph.append(xph[-1] if xph else 0.0)
-    p['xph']=xph; del p['_talent']
+        wk=mp*blended*m
+        cum+=wk; xph.append(round(cum,2)); xpg.append(round(wk,2))
+    while len(xph)<HORIZON: xph.append(xph[-1] if xph else 0.0)
+    while len(xpg)<HORIZON: xpg.append(0.0)          # blank gameweek = no fixture, no points
+    p['xph']=xph; p['xpg']=xpg; del p['_talent']
 
 # ---- Value Rating (balanced, within position, nailedness-aware) ----
 import bisect
@@ -251,10 +264,11 @@ def optimise(h):
     return {'squad':squad,'xi':xi,'cap':cap[0] if cap else None,'form':f'{nd}-{nm}-{nf}',
             'cost':round(sum(byid[i]['price'] for i in squad),1),
             'xp':round(sum(byid[i]['xph'][h-1] for i in xi)+ (byid[cap[0]]['xph'][h-1] if cap else 0),1)}
-optimal={str(h):optimise(h) for h in range(1,6)}
+optimal={str(h):optimise(h) for h in range(1,HORIZON+1)}
 
 # ---- transfer suggestions from Jack's squad (bank 0) per horizon ----
-def suggest(h, topn=4):
+def suggest(h, topn=4, squad=None):
+    SQUAD = squad if squad is not None else globals()['SQUAD']
     bank=round(100-sum(byid[i]['price'] for i in SQUAD),1)
     cur_clubs=defaultdict(int)
     for i in SQUAD: cur_clubs[byid[i]['tid']]+=1
@@ -270,7 +284,22 @@ def suggest(h, topn=4):
         if best and best[1]>0.3: out.append({'out':i,'in':best[0]['i'],'delta':round(best[1],1)})
     out.sort(key=lambda z:-z['delta'])
     return out[:topn]
-suggestions={str(h):suggest(h) for h in range(1,6)}
+suggestions={str(h):suggest(h) for h in range(1,HORIZON+1)}
+
+# ---- per-entry payloads (multi-team) ----
+entries=[]
+for E in ENTRIES:
+    pk=E['picks']
+    esq=[p[0] for p in pk]
+    valid=[i for i in esq if i in byid]
+    entries.append({
+        'id': E.get('entry'), 'name': E.get('name') or f"Team {E.get('entry')}",
+        'squad': esq, 'starting':[p[0] for p in pk if p[1]<=11],
+        'captain': next((p[0] for p in pk if p[2]), esq[9] if len(esq)>9 else esq[0]),
+        'vice': next((p[0] for p in pk if p[3]), esq[0]),
+        'bank': E.get('bank',0)/10.0,
+        'suggestions': {str(h):suggest(h,squad=valid) for h in range(1,HORIZON+1)} if len(valid)==15 else {},
+    })
 
 # ---- team rating tables for the Fixture Lab (editable in-app) ----
 gk_cs=defaultdict(int); team_goals=defaultdict(int)
@@ -294,8 +323,10 @@ for tid in teams:
 out={'ratings':ratings,'gw1odds':GW1ODDS,'meta':{'start_gw':start_gw,'deadline':d['events'][start_gw-1]['deadline_time'],
              'team_name':(MT.get('name') if MT else None) or "Jack's FPL Team",
              'season_started':any(e.get('finished') for e in d['events']),
-             'built':os.environ.get('BUILD_STAMP',''),'eo_live':bool(eo_real),
+             'built':os.environ.get('BUILD_STAMP',''),'built_iso':datetime.datetime.utcnow().replace(microsecond=0).isoformat()+'Z',
+             'eo_live':bool(eo_real),'horizon':HORIZON,'gws':upcoming[:HORIZON],
              'lineups':bool(LU.get('start')),'odds':bool(OD.get('matches'))},
+     'entries':entries,'accuracy':ACC,
      'teams':{teams[tid]['short']:{'name':teams[tid]['name'],'runs':team_runs(tid,8),'avg5':fdr_avg(tid,5)} for tid in teams},
      'team_summary':sorted([{'short':teams[tid]['short'],'name':teams[tid]['name'],'runs':team_runs(tid,8),'avg5':fdr_avg(tid,5)} for tid in teams],key=lambda x:(x['avg5'] if x['avg5'] else 9)),
      'players':players,'squad':SQUAD,'starting':STARTING,'captain':CAPTAIN,'vice':VICE,
