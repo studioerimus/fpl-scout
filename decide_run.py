@@ -9,7 +9,7 @@ Decides what this hourly run should do, so we only do heavy work when it matters
 
 Writes "mode=<x>" to $GITHUB_OUTPUT (and prints it).
 """
-import json, os, sys, urllib.request, datetime
+import json, os, sys, urllib.request, datetime, hashlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UA   = {'User-Agent': 'Mozilla/5.0 (fpl-scout-cloud)'}
@@ -25,10 +25,34 @@ def emit(mode, why):
         with open(out, 'a') as f: f.write(f'mode={mode}\n')
     return 0
 
+SRC = ['scout_template.html', 'build_dashboard.py', 'cloud_refresh.py', 'tracker.py', 'decide_run.py']
+
+def source_hash():
+    """Fingerprint of the code that produces the dashboard."""
+    h = hashlib.sha256()
+    for f in SRC:
+        try:
+            with open(path(f), 'rb') as fh: h.update(fh.read())
+        except FileNotFoundError:
+            pass
+    return h.hexdigest()[:16]
+
 def main():
     ev = os.environ.get('GITHUB_EVENT_NAME', '')
     if ev in ('push', 'workflow_dispatch'):
         return emit('full', f'triggered by {ev}')
+
+    # Self-healing: if the code changed since the last build, rebuild regardless of
+    # the clock. Without this, a missed push trigger leaves the site silently stale.
+    try:
+        want = source_hash()
+        have = None
+        if os.path.exists(path('build_stamp.json')):
+            have = (json.load(open(path('build_stamp.json'))) or {}).get('src')
+        if want != have:
+            return emit('full', f'source changed ({have} -> {want})')
+    except Exception as e:
+        print('source check skipped:', e)
 
     now = datetime.datetime.now(datetime.timezone.utc)
     try:

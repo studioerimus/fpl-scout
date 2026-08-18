@@ -329,6 +329,20 @@ try:
 except Exception as ex:
     print('tracker warning (build unaffected):', ex)
 
+# ---- 3c. record which source produced this build (lets a missed trigger self-heal) ----
+try:
+    import hashlib
+    _h = hashlib.sha256()
+    for _f in ['scout_template.html','build_dashboard.py','cloud_refresh.py','tracker.py','decide_run.py']:
+        if os.path.exists(path(_f)):
+            _h.update(open(path(_f),'rb').read())
+    json.dump({'src': _h.hexdigest()[:16],
+               'built': datetime.datetime.utcnow().replace(microsecond=0).isoformat()+'Z'},
+              open(path('build_stamp.json'),'w'))
+    print('build stamp:', _h.hexdigest()[:16])
+except Exception as ex:
+    print('build stamp warning:', ex)
+
 # ---- 4. what-changed note (squad-first, ruthless) ----
 def load(n): return json.load(open(path(n))) if os.path.exists(path(n)) else None
 new, prev = load('dash_data.json'), load('dash_data_prev.json')
