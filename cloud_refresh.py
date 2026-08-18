@@ -317,7 +317,12 @@ except Exception as ex:
 if os.path.exists(path('dash_data.json')):
     os.replace(path('dash_data.json'), path('dash_data_prev.json'))
 os.environ['BUILD_STAMP'] = datetime.datetime.utcnow().strftime('%d %b %H:%M UTC')
-subprocess.run([sys.executable, path('build_dashboard.py')], check=True)
+_b = subprocess.run([sys.executable, path('build_dashboard.py')], capture_output=True, text=True)
+open(path('build_log.txt'), 'w').write((_b.stdout or '') + '\n--- stderr ---\n' + (_b.stderr or ''))
+print(_b.stdout)
+if _b.returncode != 0:
+    # Don't kill the run: committing the log is how the failure becomes visible.
+    print('BUILD FAILED — see build_log.txt\n', _b.stderr)
 # serve at the Pages root too
 import shutil; shutil.copy(path('fpl_dashboard.html'), path('index.html'))
 

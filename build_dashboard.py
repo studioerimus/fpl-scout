@@ -350,7 +350,7 @@ for L in LG.get('leagues',[]):
     # effective ownership inside the league: a captain counts twice
     eo={pid: round(100.0*(own[pid]+capown.get(pid,0))/n,1) for pid in own} if n else {}
     mine=set(SQUAD)
-    diffs_for=sorted([{'i':pid,'own':pct(own[pid]),'eo':eo.get(pid)} for pid in mine if pid in byid],
+    diffs_for=sorted([{'i':pid,'own':pct(own.get(pid,0)),'eo':eo.get(pid,0.0)} for pid in mine if pid in byid],
                      key=lambda z:(z['own'] if z['own'] is not None else 0))
     theirs=sorted([{'i':pid,'own':pct(c),'eo':eo.get(pid)} for pid,c in own.items() if pid not in mine and pid in byid],
                   key=lambda z:-(z['own'] or 0))[:15]
