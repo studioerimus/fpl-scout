@@ -236,12 +236,14 @@
       <label class="chk"><input type="checkbox" id="mineonly"> My squad</label>
       <span style="color:var(--muted);font-size:12px;margin-left:6px">xP</span>
       <div class="seg" id="horizon"><button data-h="1">1</button><button data-h="2">2</button><button data-h="3" class="on">3</button><button data-h="4">4</button><button data-h="5">5</button><button data-h="6">6</button></div>
+      <span style="color:var(--muted);font-size:12px;margin-left:6px">Risk</span>
+      <div class="seg" id="riskseg"><button data-r="safe">Safe</button><button data-r="balanced" class="on">Balanced</button><button data-r="aggressive">Chase</button></div>
       <label class="chk" style="gap:7px;margin-left:8px">Max <input type="range" id="pricemax" style="width:104px;accent-color:var(--accent)"> <span id="pricelbl" class="num" style="min-width:42px;color:var(--ink);font-weight:600"></span></label>
     </div>
     <div class="lensbar">
       <span class="lbl">Lens</span>
       <div class="seg" id="lens">
-        <button data-l="overview" class="on">Overview</button><button data-l="attack">Attack</button><button data-l="underlying">Underlying</button><button data-l="defence">Defence</button><button data-l="value">Value</button><button data-l="own">Ownership</button>
+        <button data-l="overview" class="on">Overview</button><button data-l="attack">Attack</button><button data-l="underlying">Underlying</button><button data-l="defence">Defence</button><button data-l="shape">Shape</button><button data-l="value">Value</button><button data-l="own">Ownership</button>
       </div>
       <span style="color:var(--faint);font-size:12px;margin-left:auto" id="rowcount"></span>
     </div>
@@ -364,6 +366,14 @@
     <div class="fgrid" id="fgrid" style="display:none"></div>
     <div class="tblwrap"><table><thead><tr><th class="l">Club</th><th id="favghead">Avg 5</th><th class="l" style="padding-left:16px">Fixtures</th></tr></thead><tbody id="fixbody"></tbody></table></div>
     <div class="legend" id="fixlegend"></div>
+    <h3 class="sec" style="margin-top:26px">Rotation pairs</h3>
+    <p class="secn">Two cheap players whose good weeks alternate, so one of them always has a kind fixture. Coverage is the share of weeks in your selected range where at least one of the pair has a favourable game, read through whatever ratings and profile you've set above.</p>
+    <div class="controls">
+      <span style="color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.07em">Position</span>
+      <div class="seg" id="rotpos"><button data-p="2" class="on">DEF</button><button data-p="3">MID</button><button data-p="4">FWD</button></div>
+      <label class="chk" style="gap:7px;margin-left:8px">Max each <input type="range" id="rotcap" min="4" max="8" step="0.5" value="5" style="width:100px;accent-color:var(--accent)"> <span id="rotcaplbl" class="num" style="min-width:42px;color:var(--ink);font-weight:600">£5.0</span></label>
+    </div>
+    <div class="tblwrap" id="rotpairs"></div>
     <div id="oddsboard"></div>
   </section>
 
@@ -486,6 +496,19 @@ const COL={
   xgc90:{t:'xGC/90',sort:p=>p.xgc90,cell:p=>N(p.xgc90,2)},
   sv90:{t:'Sav/90',sort:p=>p.sv90,cell:p=>N(p.sv90,2)},
   net:{t:'Trend',sort:p=>p.net,cell:momCell},
+  floor:{t:'Floor',sort:p=>{const f=floorOf(p);return f?f.v:-1;},cell:p=>{
+    const f=floorOf(p); if(!f) return '<span class="num" style="color:var(--faint)">–</span>';
+    const pc=Math.round(f.v*100), col=f.v>=0.55?'var(--good)':f.v>=0.35?'#a06a00':'var(--faint)';
+    return `<span class="num" style="color:${col};font-weight:${f.v>=0.35?'600':'400'}" title="chance a start returns 4+ points${f.real?' (measured over '+p.floorN+' starts)':' (modelled)'}">${pc}%${f.real?'':'<span style="font-size:9px;color:var(--faint)">e</span>'}</span>`;}},
+  ceil:{t:'Ceiling',sort:p=>ceilOf(p)||-1,cell:p=>{const c=ceilOf(p);
+    return c==null?'<span class="num" style="color:var(--faint)">–</span>'
+      :`<span class="num" title="a good week, the 90th percentile of simulated outcomes">${c.toFixed(0)}</span>`;}},
+  csdc:{t:'CS+DC',sort:p=>(p.csDc==null?-1:p.csDc),cell:p=>p.csDc==null
+    ?'<span class="num" style="color:var(--faint)">–</span>'
+    :`<span class="num" title="share of his clean sheets that also reached the DEFCON threshold">${Math.round(p.csDc*100)}%</span>`},
+  bon1:{t:'Bon/1',sort:p=>(p.bon1==null?-1:p.bon1),cell:p=>p.bon1==null
+    ?'<span class="num" style="color:var(--faint)">–</span>'
+    :`<span class="num" title="how often a single return still earned bonus">${Math.round(p.bon1*100)}%</span>`},
   vel:{t:'Flow',sort:p=>((DATA.velocity||{})[p.i]||{}).delta||0,cell:p=>{
     const v=(DATA.velocity||{})[p.i];
     if(!v||!v.delta) return '<span class="num" style="color:var(--faint)">–</span>';
@@ -501,6 +524,7 @@ const LENS={
   attack:['xgi90','xgd','thr','crea','ep'],
   underlying:['npxg90','xa90','ga90','cbrit90','dchit','mp'],
   defence:['dc90','dchit','cs90','xgc90','sv90'],
+  shape:['floor','ceil','dchit','csdc','bon1'],
   value:['ppm','net','vel','cc','own'],
   own:['own','eo','net'],
 };
@@ -541,6 +565,9 @@ function render(){
 document.querySelectorAll('#posfilter button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#posfilter button').forEach(x=>x.classList.remove('on'));b.classList.add('on');posF=b.dataset.p;render();});
 document.querySelectorAll('#lens button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#lens button').forEach(x=>x.classList.remove('on'));b.classList.add('on');lens=b.dataset.l;render();});
 document.querySelectorAll('#horizon button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#horizon button').forEach(x=>x.classList.remove('on'));b.classList.add('on');horizon=+b.dataset.h;render();});
+document.querySelectorAll('#riskseg button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#riskseg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); risk=b.dataset.r; _ratingCache={}; render(); renderOptimal(); renderTeam();});
 document.getElementById('search').oninput=e=>{q=e.target.value.toLowerCase().trim();render();};
 document.getElementById('nailed').onchange=e=>{nailedOnly=e.target.checked;render();};
 document.getElementById('mineonly').onchange=e=>{mineOnly=e.target.checked;render();};
@@ -687,6 +714,7 @@ function cDiff(team,opp,isHome){
   return clamp(v,1,5);
 }
 function renderFix(){
+  try{ renderRotPairs(); }catch(e){}
   const rows=DATA.team_summary.map(t=>{
     const runs=(DATA.teams[t.short].runs||[]).filter(r=>r.gw>=fromGW&&r.gw<=toGW);
     const cells=runs.map(r=>({...r,cd:cDiff(t.short,r.opp,r.h)}));
@@ -753,8 +781,9 @@ const FORMS=[[3,4,3],[3,5,2],[4,3,3],[4,4,2],[4,5,1],[5,3,2],[5,4,1]];
 let xpRange=null;
 const xpH=p=>{
   if(!p.xph||!p.xph.length) return 0;
-  if(xpRange){ let t=0; for(let k=xpRange[0];k<=xpRange[1];k++) t+=(p.xpg&&p.xpg[k])||0; return t; }
-  return p.xph[Math.min(Math.max(optH,1),p.xph.length)-1];
+  const r=(typeof riskAdj==='function')?riskAdj(p):1;
+  if(xpRange){ let t=0; for(let k=xpRange[0];k<=xpRange[1];k++) t+=(p.xpg&&p.xpg[k])||0; return t*r; }
+  return p.xph[Math.min(Math.max(optH,1),p.xph.length)-1]*r;
 };
 function solveWith(range,fn){            // run a solve under a different lens, then restore
   const sr=xpRange, sl=optLocks, se=optExcl;
@@ -1546,6 +1575,120 @@ function renderAccuracy(){
     <div class="tblwrap"><table><thead><tr><th class="l">GW</th><th>Avg error</th><th>Projected</th><th>Actual</th><th>Your XI proj</th><th>Your XI got</th><th class="l" style="padding-left:12px">Captain</th></tr></thead><tbody>${gwRows}</tbody></table></div>`;
 }
 
+/* ---------- Rotation pairs ----------
+   Cheap defenders are a budget problem, not a talent one: the aim is that one of the
+   two always has a kind fixture. Pairs are scored on coverage across the range you've
+   chosen in the Fixture Lab, using your own ratings and profile rather than FPL's FDR. */
+let rotPos=2, rotCap=5.0;
+function renderRotPairs(){
+  const host=document.getElementById('rotpairs'); if(!host) return;
+  const gws=[]; for(let g=fromGW; g<=toGW; g++) gws.push(g);
+  const kind=2.5;                                    // a fixture worth starting
+  // one row per club: is each gameweek in range a good one?
+  const clubGood={};
+  Object.keys(DATA.teams).forEach(sh=>{
+    const runs=DATA.teams[sh].runs||[];
+    clubGood[sh]=gws.map(g=>{const r=runs.find(x=>x.gw===g);
+      return r? (cDiff(sh,r.opp,r.h)<=kind?1:0) : 0;});   // no fixture counts as not covered
+  });
+  const pool=DATA.players.filter(p=>p.pt===rotPos&&p.price<=rotCap+1e-9&&(p.mp||0)>=0.45&&p.xpg)
+    .sort((a,b)=>b.vr-a.vr).slice(0,44);
+  const seen=new Set(), out=[];
+  for(let i=0;i<pool.length;i++) for(let j=i+1;j<pool.length;j++){
+    const a=pool[i], b=pool[j];
+    if(a.tm===b.tm) continue;                        // same club defeats the point
+    const k=[a.i,b.i].sort().join('-'); if(seen.has(k)) continue; seen.add(k);
+    const ga=clubGood[a.tm]||[], gb=clubGood[b.tm]||[];
+    let cov=0, both=0;
+    for(let n=0;n<gws.length;n++){ const s=(ga[n]||0)+(gb[n]||0); if(s>0)cov++; if(s===2)both++; }
+    out.push({a,b,cov:cov/gws.length,both,price:a.price+b.price,
+              xp:(a.xph?a.xph[Math.min(HZ,gws.length)-1]:0)+(b.xph?b.xph[Math.min(HZ,gws.length)-1]:0)});
+  }
+  out.sort((x,y)=>y.cov-x.cov || x.price-y.price || y.xp-x.xp);
+  const top=out.slice(0,8);
+  host.innerHTML = top.length ? '<table><thead><tr><th class="l">Pair</th><th>Combined £</th><th>Coverage</th><th>Both good</th><th class="l" style="padding-left:14px">GW'+fromGW+'–'+toGW+'</th></tr></thead><tbody>'+
+    top.map(r=>{
+      const strip=g=>{const runs=DATA.teams[g.tm].runs||[];
+        return '<span class="fix">'+gws.map(w=>{const x=runs.find(y=>y.gw===w);
+          if(!x) return '<span class="fcell d0" title="GW'+w+' blank">–</span>';
+          const cd=cDiff(g.tm,x.opp,x.h);
+          return `<span class="fcell d${Math.round(cd)}" title="GW${w} ${x.opp} ${x.h?'H':'A'}">${x.opp}<small>${x.h?'H':'A'}</small></span>`;}).join('')+'</span>';};
+      return `<tr><td class="l"><span class="pname">${r.a.n}</span> <span class="pmeta">${r.a.tm} ${fmtM(r.a.price)}</span>
+          <div><span class="pname">${r.b.n}</span> <span class="pmeta">${r.b.tm} ${fmtM(r.b.price)}</span></div></td>
+        <td>${fmtM(r.price)}</td>
+        <td><span class="num" style="font-weight:600;color:${r.cov>=0.8?'var(--good)':r.cov>=0.6?'#a06a00':'var(--muted)'}">${Math.round(r.cov*100)}%</span></td>
+        <td><span class="num" style="color:var(--faint)">${r.both}</span></td>
+        <td class="l" style="padding-left:14px">${strip(r.a)}<div style="margin-top:3px">${strip(r.b)}</div></td></tr>`;}).join('')+'</tbody></table>'
+    : '<div style="padding:16px;color:var(--muted)">No pairs under that price with enough minutes between them.</div>';
+}
+(function(){
+  document.querySelectorAll('#rotpos button').forEach(b=>b.onclick=()=>{
+    document.querySelectorAll('#rotpos button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); rotPos=+b.dataset.p; renderRotPairs();});
+  const sl=document.getElementById('rotcap');
+  if(sl) sl.oninput=()=>{rotCap=+sl.value; document.getElementById('rotcaplbl').textContent='£'+rotCap.toFixed(1); renderRotPairs();};
+})();
+
+/* ---------- Shape: how the points arrive, not just how many ----------
+   Expected points can't tell a steady 5-a-week player from one who blanks three
+   times then hauls 15. Same mean, completely different asset. This reuses the
+   Monte-Carlo engine to score every player on floor and ceiling, so the pool can
+   be sorted by consistency or by explosiveness. Measured rates replace these as
+   the season banks real matches. */
+var SHAPE=null;
+function buildShape(N){
+  if(SHAPE) return SHAPE;
+  try{ if(!TEAMATT||!Gpts) return {}; }catch(_){ return {}; }   // not initialised yet
+  N=N||3000; SHAPE={};
+  const byTeam={};
+  DATA.players.forEach(p=>{ if(p.mp>0&&(p.xpg&&p.xpg[0]>0)) (byTeam[p.tm]=byTeam[p.tm]||[]).push(p); });
+  for(const tm in byTeam){
+    const squad=byTeam[tm], o=DATA.gw1odds[tm]||{xgF:1.3,xgA:1.3};
+    const t=TEAMATT[tm]; if(!t) continue;
+    const acc={}; squad.forEach(p=>acc[p.i]={n:0,sum:0,four:0,vals:new Float64Array(N)});
+    for(let s=0;s<N;s++){
+      const G=rpois(o.xgF), C=rpois(o.xgA), cs=C===0?1:0, conc=-Math.floor(C/2);
+      const goalsBy={},assistBy={};
+      for(let g=0;g<G;g++){ const si=pick(t.cg,t.gs);
+        if(si>=0){ const sid=t.ids[si]; goalsBy[sid]=(goalsBy[sid]||0)+1;
+          if(Math.random()<0.7){ const ai=pick(t.ca,t.as);
+            if(ai>=0&&t.ids[ai]!==sid) assistBy[t.ids[ai]]=(assistBy[t.ids[ai]]||0)+1; } } }
+      for(const p of squad){ let pts=0;
+        if(Math.random()<p.mp){ pts+=2;
+          const gl=goalsBy[p.i]||0, as=assistBy[p.i]||0;
+          pts += gl*Gpts[p.pt] + as*3;
+          if(p.pt<=2) pts += cs*4 + conc; else if(p.pt===3) pts += cs;
+          if(p.dcHit!=null && Math.random()<p.dcHit) pts += 2;   // the threshold that pays
+          if(gl+as>0) pts+=1;
+        }
+        const a=acc[p.i]; a.vals[s]=pts; a.sum+=pts; if(pts>=4)a.four++;
+      }
+    }
+    squad.forEach(p=>{ const a=acc[p.i], v=Float64Array.from(a.vals).sort();
+      SHAPE[p.i]={mean:a.sum/N, p10:v[Math.floor(0.10*N)], med:v[Math.floor(0.50*N)],
+                  p90:v[Math.floor(0.90*N)], four:a.four/N}; });
+  }
+  return SHAPE;
+}
+const shapeOf=p=>{const S=buildShape();return S[p.i]||null;};
+/* floor we can state today (modelled) or measured once real starts exist */
+function floorOf(p){ if(p.floor4!=null) return {v:p.floor4,real:true};
+  const s=shapeOf(p); return s?{v:s.four,real:false}:null; }
+function ceilOf(p){ const s=shapeOf(p); return s?s.p90:null; }
+
+/* ---------- Risk stance ----------
+   Chasing and protecting are different problems. Safe leans on floor, Aggressive on
+   ceiling, Balanced leaves the model alone. It reweights the rating and what the
+   optimiser maximises rather than changing the projection itself. */
+var risk='balanced';
+function riskAdj(p){
+  if(risk!=='safe'&&risk!=='aggressive') return 1;   // covers balanced and pre-init
+  const s=shapeOf(p); if(!s) return 1;
+  const base=s.mean||0.01;
+  if(risk==='safe')  return Math.max(0.6, Math.min(1.4, 0.55 + 0.9*(s.p10/base)));
+  return Math.max(0.6, Math.min(1.4, 0.62 + 0.42*(s.p90/base)));   // aggressive
+}
+
 /* ---------- Squad rating ----------
    A score is only meaningful if the scale is anchored to something real, so this
    one is pinned to two reference squads rebuilt from the same projections:
@@ -1757,7 +1900,7 @@ function renderLeague(){
 (function(){const sel=document.getElementById('lgsel'); if(sel) sel.onchange=e=>{lgIdx=+e.target.value;renderLeague();};})();
 
 /* Tabs */
-document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');if(b.dataset.v==='sim'&&!simInit){simInit=true;renderSim();}if(b.dataset.v==='compare'&&!cmpInit){cmpInit=true;renderCmpChips();renderRadar();}if(b.dataset.v==='planner'&&!planInit){planInit=true;renderPlanner();}if(b.dataset.v==='accuracy'&&!accInit){accInit=true;renderAccuracy();}if(b.dataset.v==='league'&&!lgInit){lgInit=true;renderLeague();}});
+document.querySelectorAll('nav.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('on'));document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));b.classList.add('on');document.getElementById('v-'+b.dataset.v).classList.add('on');if(b.dataset.v==='sim'&&!simInit){simInit=true;renderSim();}if(b.dataset.v==='compare'&&!cmpInit){cmpInit=true;renderCmpChips();renderRadar();}if(b.dataset.v==='planner'&&!planInit){planInit=true;renderPlanner();}if(b.dataset.v==='accuracy'&&!accInit){accInit=true;renderAccuracy();}if(b.dataset.v==='league'&&!lgInit){lgInit=true;renderLeague();}if(b.dataset.v==='fixtures'){try{renderRotPairs();}catch(e){console.warn('pairs',e);}}});
 
 headRow(); render();
 try{ renderTeam(); }catch(e){ console.warn('rating render',e); }

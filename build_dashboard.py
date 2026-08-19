@@ -184,53 +184,88 @@ for p in players:
     while len(xpg)<HORIZON: xpg.append(0.0)          # blank gameweek = no fixture, no points
     p['xph']=xph; p['xpg']=xpg; del p['_talent']
 
-# ---- defensive contribution: does he actually cross the line that pays? ----
-# 2 pts per match for 10+ CBIT (DEF) or 12+ CBIRT (MID/FWD), capped at 2 and unchanged
-# for 2026/27. An average is misleading because the reward is per-match and binary, so
-# what matters is how OFTEN a player clears it. Until per-match data accumulates this is
-# modelled as a Poisson tail on the per-90 rate; measured rates replace it as they land.
+# ---- consistency layer: how points arrive, not just how many ----
+# DEFCON pays 2 pts per match for 10+ CBIT (DEF) or 12+ CBIRT (MID/FWD), capped at 2.
+# The reward is per-match and binary, so an average misleads: what matters is how OFTEN
+# a player clears it. Measured rates replace modelled ones as the season banks matches.
 DC_THR = {1: None, 2: 10, 3: 12, 4: 12}
+DC_BIAS = 0.97      # our Poisson estimate ran ~2 pts high against 50 measured rates
+DC_EST_CAP = 0.75   # no measured rate in a full season of real data exceeded 71%, so an
+                    # estimate above this is a data artefact, not a player. Mainly catches
+                    # position reclassification: FPL counts ball recoveries for midfielders
+                    # but not defenders, so a MID->DEF switch carries an inflated per-90.
 
 def _pois_at_least(k, lam):
     if lam <= 0: return 0.0
-    # 1 - P(X < k)
     term, acc = math.exp(-lam), 0.0
     for i in range(k):
         acc += term
         term *= lam / (i + 1)
     return max(0.0, min(1.0, 1.0 - acc))
 
-# real per-match hit rates, built up from sealed gameweeks as the season runs
-REAL_DC = {}
-_res_dir = os.path.join(HERE, 'results')
-if os.path.isdir(_res_dir):
-    for _f in sorted(os.listdir(_res_dir)):
-        try: _r = json.load(open(os.path.join(_res_dir, _f)))
+# ---- what the season has actually shown us so far ----
+REAL = {}          # player -> counters built from sealed, scored gameweeks
+OPP_DC = {}        # opponent team -> DEFCON conceded, split by CB and by midfielder
+_res = os.path.join(HERE, 'results')
+if os.path.isdir(_res):
+    for _f in sorted(os.listdir(_res)):
+        try: _r = json.load(open(os.path.join(_res, _f)))
         except Exception: continue
-        for _row in _r.get('rows', []):
-            if _row.get('dc') is None or (_row.get('min') or 0) < 60: continue
-            t = DC_THR.get({'GK':1,'DEF':2,'MID':3,'FWD':4}.get(_row.get('pos')))
-            if not t: continue
-            a = REAL_DC.setdefault(_row['i'], [0, 0])
-            a[1] += 1
-            if _row['dc'] >= t: a[0] += 1
+        for _w in _r.get('rows', []):
+            if (_w.get('min') or 0) < 60: continue          # judge starters only
+            pt = {'GK':1,'DEF':2,'MID':3,'FWD':4}.get(_w.get('pos'))
+            a = REAL.setdefault(_w['i'], {'starts':0,'dc_hit':0,'dc_seen':0,'four':0,
+                                          'cs':0,'cs_dc':0,'one_ret':0,'one_ret_bon':0})
+            a['starts'] += 1
+            if (_w.get('act') or 0) >= 4: a['four'] += 1
+            thr = DC_THR.get(pt)
+            if thr and _w.get('dc') is not None:
+                a['dc_seen'] += 1
+                hit = _w['dc'] >= thr
+                if hit: a['dc_hit'] += 1
+                if _w.get('cs'):                             # clean sheet AND defcon?
+                    a['cs'] += 1
+                    if hit: a['cs_dc'] += 1
+                o = _w.get('opp')
+                if o and pt in (2, 3):
+                    k = 'cb' if pt == 2 else 'mid'
+                    t = OPP_DC.setdefault(o, {'cb':[0,0], 'mid':[0,0]})
+                    t[k][1] += 1
+                    if hit: t[k][0] += 1
+            if (_w.get('ret') or 0) == 1:                    # bonus off a single return
+                a['one_ret'] += 1
+                if (_w.get('bon') or 0) > 0: a['one_ret_bon'] += 1
+
+opp_dc = {}
+for tid, v in OPP_DC.items():
+    sh = teams.get(tid, {}).get('short')
+    if not sh: continue
+    opp_dc[sh] = {k: (round(v[k][0]/v[k][1], 2) if v[k][1] >= 6 else None) for k in ('cb','mid')}
 
 for p_ in players:
     thr = DC_THR.get(p_['pt'])
+    r = REAL.get(p_['i']) or {}
+    st = r.get('starts', 0)
     p_['dcThr'] = thr
     if not thr:
-        p_['dcHit'] = None; p_['dcN'] = 0; p_['dcReal'] = False
-        continue
-    real = REAL_DC.get(p_['i'])
-    if real and real[1] >= 4:                      # enough matches to trust the measurement
-        p_['dcHit'] = round(real[0] / real[1], 2); p_['dcN'] = real[1]; p_['dcReal'] = True
+        p_['dcHit'] = None; p_['dcN'] = st; p_['dcReal'] = False
+    elif r.get('dc_seen', 0) >= 4:
+        p_['dcHit'] = round(r['dc_hit']/r['dc_seen'], 2); p_['dcN'] = r['dc_seen']; p_['dcReal'] = True
     elif p_['min'] >= 450:
-        # FPL publishes a per-90 rate regardless of sample, so a player with 10 minutes
-        # and 10 actions reads as 90 per 90. Only estimate off a real body of minutes.
-        p_['dcHit'] = round(_pois_at_least(thr, p_['dc90']), 2)
-        p_['dcN'] = real[1] if real else 0; p_['dcReal'] = False
+        # FPL publishes a per-90 rate at any sample size, so a player with a handful of
+        # minutes reads absurdly high. Only estimate off a real body of minutes.
+        p_['dcHit'] = round(min(DC_EST_CAP, _pois_at_least(thr, p_['dc90']) * DC_BIAS), 2)
+        p_['dcN'] = st; p_['dcReal'] = False
     else:
-        p_['dcHit'] = None; p_['dcN'] = real[1] if real else 0; p_['dcReal'] = False
+        p_['dcHit'] = None; p_['dcN'] = st; p_['dcReal'] = False
+
+    # floor: how often a start turns into a genuinely useful score
+    p_['floor4'] = round(r['four']/st, 2) if st >= 4 else None
+    p_['floorN'] = st
+    # do his clean sheets and his DEFCON arrive together, or instead of each other?
+    p_['csDc'] = round(r['cs_dc']/r['cs'], 2) if r.get('cs', 0) >= 3 else None
+    # does a single return still earn bonus?
+    p_['bon1'] = round(r['one_ret_bon']/r['one_ret'], 2) if r.get('one_ret', 0) >= 3 else None
 
 # ---- Value Rating (balanced, within position, nailedness-aware) ----
 import bisect
@@ -425,7 +460,7 @@ out={'ratings':ratings,'gw1odds':GW1ODDS,'meta':{'start_gw':start_gw,'deadline':
              'built':os.environ.get('BUILD_STAMP',''),'built_iso':datetime.datetime.utcnow().replace(microsecond=0).isoformat()+'Z',
              'eo_live':bool(eo_real),'horizon':HORIZON,'gws':upcoming[:HORIZON],
              'lineups':bool(LU.get('start')),'odds':bool(OD.get('matches'))},
-     'entries':entries,'accuracy':ACC,'leagues':league_out,'velocity':vel_out,
+     'entries':entries,'accuracy':ACC,'opp_dc':opp_dc,'leagues':league_out,'velocity':vel_out,
      'teams':{teams[tid]['short']:{'name':teams[tid]['name'],'runs':team_runs(tid),'avg5':fdr_avg(tid,5)} for tid in teams},
      'team_summary':sorted([{'short':teams[tid]['short'],'name':teams[tid]['name'],'runs':team_runs(tid),'avg5':fdr_avg(tid,5)} for tid in teams],key=lambda x:(x['avg5'] if x['avg5'] else 9)),
      'players':players,'squad':SQUAD,'starting':STARTING,'captain':CAPTAIN,'vice':VICE,

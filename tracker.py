@@ -71,14 +71,39 @@ def settle(gw):
     except Exception as e:
         print(f'could not fetch GW{gw} results: {e}'); return False
     actual = {el['id']: el['stats'] for el in live.get('elements', [])}
+
+    # which opponent did each player face? live data carries the fixture id per player.
+    OPP, fx_map = {}, {}
+    try:
+        for f in (load('fpl-fixtures.json') or []):
+            fx_map[f['id']] = (f['team_h'], f['team_a'])
+        team_of = {}
+        for e in (load('fpl-bootstrap-static.json') or {}).get('elements', []):
+            team_of[e['id']] = e['team']
+        for el in live.get('elements', []):
+            for ex in (el.get('explain') or []):
+                fid = ex.get('fixture')
+                if fid in fx_map:
+                    h, a = fx_map[fid]
+                    mine = team_of.get(el['id'])
+                    OPP[(el['id'], gw)] = a if mine == h else h
+    except Exception as ex:
+        print('opponent map unavailable:', ex)
+
     rows = []
     for p in pred['players']:
         st = actual.get(p['i'])
         if not st: continue
-        rows.append({'i': p['i'], 'n': p['n'], 'pos': p['pos'], 'price': p.get('price'),
-                     'proj': round(p['proj'], 2), 'act': st.get('total_points', 0),
-                     'min': st.get('minutes', 0), 'mp': p.get('mp'),
-                     'dc': st.get('defensive_contribution')})   # banks real per-match DC counts
+        row = {'i': p['i'], 'n': p['n'], 'pos': p['pos'], 'price': p.get('price'),
+               'proj': round(p['proj'], 2), 'act': st.get('total_points', 0),
+               'min': st.get('minutes', 0), 'mp': p.get('mp'),
+               'dc': st.get('defensive_contribution'),
+               'cs': st.get('clean_sheets', 0), 'gc': st.get('goals_conceded', 0),
+               'bon': st.get('bonus', 0),
+               'ret': (st.get('goals_scored', 0) + st.get('assists', 0)
+                       + st.get('clean_sheets', 0) + st.get('penalties_saved', 0))}
+        row['opp'] = OPP.get((p['i'], gw))          # who he faced, for opponent-DEFCON
+        rows.append(row)
     out = {'gw': gw, 'scored_at': datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat(),
            'rows': rows}
     # how did the squad we actually fielded do?
