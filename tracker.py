@@ -77,7 +77,8 @@ def settle(gw):
         if not st: continue
         rows.append({'i': p['i'], 'n': p['n'], 'pos': p['pos'], 'price': p.get('price'),
                      'proj': round(p['proj'], 2), 'act': st.get('total_points', 0),
-                     'min': st.get('minutes', 0), 'mp': p.get('mp')})
+                     'min': st.get('minutes', 0), 'mp': p.get('mp'),
+                     'dc': st.get('defensive_contribution')})   # banks real per-match DC counts
     out = {'gw': gw, 'scored_at': datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat(),
            'rows': rows}
     # how did the squad we actually fielded do?

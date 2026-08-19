@@ -59,6 +59,8 @@
   .pmeta{color:var(--faint);font-size:11.5px}
   .badge{display:inline-block;font-family:var(--disp);font-size:9.5px;font-weight:600;padding:1px 5px;border-radius:4px;background:var(--line2);color:var(--muted);margin-left:3px;vertical-align:middle}
   .badge.p{background:#eafaf1;color:#1f9d63}
+  .badge.dcb{background:#e3f0fb;color:#1d5fa0;font-weight:700}
+  .badge.dcb.amber{background:#fdf3dd;color:#8a6300}
   .pos-pill{display:inline-block;min-width:34px;text-align:center;font-family:var(--disp);font-size:10.5px;font-weight:600;padding:2px 0;border-radius:5px;background:var(--line2);color:var(--muted)}
   .vr{display:inline-block;min-width:36px;font-family:var(--disp);font-weight:700;font-size:12.5px;padding:2px 7px;border-radius:6px;text-align:center}
   .vrA{background:#1f9d63;color:#fff} .vrB{background:#d6f0e0;color:#177a4c}
@@ -428,6 +430,16 @@ const fmtM=v=>'£'+v.toFixed(1);
 const dcls=d=>'d'+(d||0);
 function fixCells(short,n){const t=DATA.teams[short];if(!t)return '';return '<span class="fix">'+t.runs.slice(0,n).map(r=>`<span class="fcell ${dcls(r.d)}">${r.opp}<small>${r.h?'H':'A'}</small></span>`).join('')+'</span>';}
 function spBadges(p){let b='';if(p.pen&&p.pen<=2)b+=`<span class="badge p" title="Penalties #${p.pen}">P${p.pen}</span>`;if(p.fk&&p.fk<=2)b+='<span class="badge" title="Free-kicks">FK</span>';if(p.ck&&p.ck<=2)b+='<span class="badge" title="Corners">CK</span>';return b;}
+/* Defensive contribution: 2 pts for 10+ CBIT (DEF) or 12+ CBIRT (MID/FWD) in a match.
+   The reward is per-match and binary, so how OFTEN he clears it beats his average. */
+function dcBadge(p){
+  if(p.dcHit==null||!p.dcThr) return '';
+  const pc=Math.round(p.dcHit*100);
+  const tip=`${pc}% of matches reach ${p.dcThr}+ defensive actions (${p.dcReal?`measured over ${p.dcN} games`:'estimated from '+p.dc90.toFixed(1)+' per 90'})`;
+  if(p.dcHit>=0.60) return `<span class="badge dcb" title="${tip}">DC ${pc}</span>`;
+  if(p.dcHit>=0.40) return `<span class="badge dcb amber" title="${tip}">DC ${pc}</span>`;
+  return '';
+}
 function availFlag(p){
   if(p.inj && ['OUT','SUS','INJ'].includes(p.inj)) return `<span class="badge" style="background:#fbe6e6;color:#c0392b" title="${p.news||p.inj}">${p.inj}</span>`;
   if(p.inj && ['QUES','DBT'].includes(p.inj)) return `<span class="badge" style="background:#fdf0d8;color:#a06a00" title="${p.news||'doubtful'}">?</span>`;
@@ -447,7 +459,7 @@ function xgdCell(p){const v=p.xgd||0;const cls=v<-0.5?'up':v>2?'down':'';const t
 
 /* column definitions */
 const COL={
-  n:  {t:'Player',l:1,sort:p=>p.n,cell:p=>`<span class="pname">${p.n}</span> ${spBadges(p)} ${availFlag(p)} ${mineSet.has(p.i)?'<span class="badge">MINE</span>':''}<div class="pmeta">${p.tm}</div>`},
+  n:  {t:'Player',l:1,sort:p=>p.n,cell:p=>`<span class="pname">${p.n}</span> ${spBadges(p)} ${dcBadge(p)} ${availFlag(p)} ${mineSet.has(p.i)?'<span class="badge">MINE</span>':''}<div class="pmeta">${p.tm}</div>`},
   pos:{t:'Pos',l:1,sort:p=>posOrder[p.pos],cell:p=>`<span class="pos-pill">${p.pos}</span>`},
   price:{t:'£',sort:p=>p.price,cell:p=>N(p.price)},
   own:{t:'Own%',sort:p=>p.own,cell:p=>N(p.own)},
@@ -465,6 +477,11 @@ const COL={
   thr:{t:'Threat',sort:p=>p.thr,cell:p=>N(p.thr,0)},
   crea:{t:'Creat',sort:p=>p.crea,cell:p=>N(p.crea,0)},
   dc90:{t:'DC/90',sort:p=>p.dc90,cell:p=>N(p.dc90,1)},
+  dchit:{t:'DC hit%',sort:p=>(p.dcHit==null?-1:p.dcHit),cell:p=>{
+    if(p.dcHit==null) return '<span class="num" style="color:var(--faint)">–</span>';
+    const pc=Math.round(p.dcHit*100);
+    const col=p.dcHit>=0.60?'var(--good)':p.dcHit>=0.40?'#a06a00':'var(--faint)';
+    return `<span class="num" style="color:${col};font-weight:${p.dcHit>=0.40?'600':'400'}" title="needs ${p.dcThr}+ actions · ${p.dcReal?'measured over '+p.dcN+' games':'estimated'}">${pc}%${p.dcReal?'':'<span style="font-size:9px;color:var(--faint)">e</span>'}</span>`;}},
   cs90:{t:'CS/90',sort:p=>p.cs90,cell:p=>N(p.cs90,2)},
   xgc90:{t:'xGC/90',sort:p=>p.xgc90,cell:p=>N(p.xgc90,2)},
   sv90:{t:'Sav/90',sort:p=>p.sv90,cell:p=>N(p.sv90,2)},
@@ -482,8 +499,8 @@ const COL={
 const LENS={
   overview:['own','fix','ep','ppm'],
   attack:['xgi90','xgd','thr','crea','ep'],
-  underlying:['npxg90','xa90','ga90','cbrit90','mp'],
-  defence:['dc90','cs90','xgc90','sv90'],
+  underlying:['npxg90','xa90','ga90','cbrit90','dchit','mp'],
+  defence:['dc90','dchit','cs90','xgc90','sv90'],
   value:['ppm','net','vel','cc','own'],
   own:['own','eo','net'],
 };
@@ -563,6 +580,7 @@ function pcard(p,o){
   const col=CLUBC[p.tm]||'#8a9098';
   const arm=o.cap?'<span class="arm2">C</span>':o.vice?'<span class="arm2 v">V</span>':'';
   const bad=[]; if(p.pen&&p.pen<=2)bad.push('P'+p.pen); if(p.fk&&p.fk<=2)bad.push('FK'); if(p.ck&&p.ck<=2)bad.push('CK');
+  if(p.dcHit!=null&&p.dcHit>=0.60) bad.push('DC');
   const t=DATA.teams[p.tm], runs=(t&&t.runs)?t.runs.slice(0,3):[];
   const inj=(p.inj&&['OUT','SUS','INJ'].includes(p.inj))?`<span class="flag" style="color:#c0392b">${p.inj}</span>`
         :(p.inj&&['QUES','DBT'].includes(p.inj))?'<span class="flag" style="color:#a06a00">?</span>'
@@ -723,7 +741,8 @@ renderFix();
       <div class="tblwrap"><table><thead><tr><th class="l">Best clean-sheet odds · defenders</th><th>CS%</th></tr></thead><tbody>${cs.map(sh=>row(sh,Math.round(gw1[sh].cs*100)+'%')).join('')}</tbody></table></div>
     </div>`;
 })();
-document.getElementById('legend').innerHTML='<span style="color:var(--muted)">Rating</span><span class="vr vrA">8.5+</span><span class="vr vrB">7+</span><span class="vr vrC">5.5+</span><span class="vr vrD">4+</span><span style="color:var(--faint);margin-left:8px">Trend = net transfers · xGΔ green = under xG (due) · EO~ estimated</span>';
+document.getElementById('legend').innerHTML='<span style="color:var(--muted)">Rating</span><span class="vr vrA">8.5+</span><span class="vr vrB">7+</span><span class="vr vrC">5.5+</span><span class="vr vrD">4+</span><span style="color:var(--faint);margin-left:8px">Trend = net transfers · xGΔ green = under xG (due) · EO~ estimated</span>'
+  +'<span class="badge dcb" style="margin-left:10px">DC 70</span><span style="color:var(--faint)">shows how often he reaches the defensive-contribution threshold (10 actions for defenders, 12 for midfielders and forwards) — 2 pts when he does. \'e\' marks an estimate until enough matches are played.</span>';
 
 /* Optimal XI — live client-side solver with player locks */
 let optH=3, optLocks=[], optExcl=[], optMode='lock', chip='none';

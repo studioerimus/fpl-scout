@@ -184,6 +184,54 @@ for p in players:
     while len(xpg)<HORIZON: xpg.append(0.0)          # blank gameweek = no fixture, no points
     p['xph']=xph; p['xpg']=xpg; del p['_talent']
 
+# ---- defensive contribution: does he actually cross the line that pays? ----
+# 2 pts per match for 10+ CBIT (DEF) or 12+ CBIRT (MID/FWD), capped at 2 and unchanged
+# for 2026/27. An average is misleading because the reward is per-match and binary, so
+# what matters is how OFTEN a player clears it. Until per-match data accumulates this is
+# modelled as a Poisson tail on the per-90 rate; measured rates replace it as they land.
+DC_THR = {1: None, 2: 10, 3: 12, 4: 12}
+
+def _pois_at_least(k, lam):
+    if lam <= 0: return 0.0
+    # 1 - P(X < k)
+    term, acc = math.exp(-lam), 0.0
+    for i in range(k):
+        acc += term
+        term *= lam / (i + 1)
+    return max(0.0, min(1.0, 1.0 - acc))
+
+# real per-match hit rates, built up from sealed gameweeks as the season runs
+REAL_DC = {}
+_res_dir = os.path.join(HERE, 'results')
+if os.path.isdir(_res_dir):
+    for _f in sorted(os.listdir(_res_dir)):
+        try: _r = json.load(open(os.path.join(_res_dir, _f)))
+        except Exception: continue
+        for _row in _r.get('rows', []):
+            if _row.get('dc') is None or (_row.get('min') or 0) < 60: continue
+            t = DC_THR.get({'GK':1,'DEF':2,'MID':3,'FWD':4}.get(_row.get('pos')))
+            if not t: continue
+            a = REAL_DC.setdefault(_row['i'], [0, 0])
+            a[1] += 1
+            if _row['dc'] >= t: a[0] += 1
+
+for p_ in players:
+    thr = DC_THR.get(p_['pt'])
+    p_['dcThr'] = thr
+    if not thr:
+        p_['dcHit'] = None; p_['dcN'] = 0; p_['dcReal'] = False
+        continue
+    real = REAL_DC.get(p_['i'])
+    if real and real[1] >= 4:                      # enough matches to trust the measurement
+        p_['dcHit'] = round(real[0] / real[1], 2); p_['dcN'] = real[1]; p_['dcReal'] = True
+    elif p_['min'] >= 450:
+        # FPL publishes a per-90 rate regardless of sample, so a player with 10 minutes
+        # and 10 actions reads as 90 per 90. Only estimate off a real body of minutes.
+        p_['dcHit'] = round(_pois_at_least(thr, p_['dc90']), 2)
+        p_['dcN'] = real[1] if real else 0; p_['dcReal'] = False
+    else:
+        p_['dcHit'] = None; p_['dcN'] = real[1] if real else 0; p_['dcReal'] = False
+
 # ---- Value Rating (balanced, within position, nailedness-aware) ----
 import bisect
 def pct_fn(vals):
