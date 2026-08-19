@@ -379,3 +379,52 @@ note = ("# FPL Scout — daily refresh\n\n" + (f"GW{new['meta']['start_gw']} · 
         + ("\n".join('- '+l for l in lines) if lines else "- Nothing decision-relevant changed since yesterday."))
 open(path('what_changed.md'), 'w').write(note)
 print(note)
+
+# ---- 5. commit and push, conflict-proof ----
+# Two writers touch this branch: this runner regenerating outputs, and Jack pushing
+# source from his Mac. When they interleave, a plain rebase conflicts on the generated
+# files and leaves the repo mid-rebase, which is what exit 128 was. Resolve by rule:
+# generated artefacts take THIS build (it is the freshest), source files take the remote
+# (a human edited them). If source did change, the next run's hash check rebuilds anyway.
+GENERATED = ('dash_data.json', 'dash_data_prev.json', 'fpl_dashboard.html', 'index.html',
+             'what_changed.md', 'feeds_status.json', 'build_stamp.json', 'build_log.txt',
+             'fpl-bootstrap-static.json', 'fpl-fixtures.json', 'lineups.json', 'odds.json',
+             'myteam.json', 'myteams.json', 'purchases.json', 'velocity.json',
+             'leagues.json', 'accuracy.json', 'predictions/', 'results/')
+
+def _git(*a):
+    return subprocess.run(('git',) + a, cwd=HERE, capture_output=True, text=True)
+
+def sync_and_push():
+    if not os.path.isdir(os.path.join(HERE, '.git')):
+        print('not a git checkout, skipping push'); return
+    _git('config', 'user.name', 'fpl-scout-bot')
+    _git('config', 'user.email', 'bot@users.noreply.github.com')
+    stamp = datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M')
+    for attempt in range(1, 4):
+        _git('add', '-A')
+        _git('commit', '-m', f'Scout refresh {stamp} [skip ci]')
+        _git('fetch', 'origin', 'main')
+        r = _git('rebase', 'origin/main')
+        if r.returncode != 0:
+            print(f'attempt {attempt}: rebase conflict, resolving by rule')
+            conflicted = [l.strip() for l in _git('diff', '--name-only', '--diff-filter=U').stdout.splitlines() if l.strip()]
+            for f in conflicted:
+                gen = any(f == g or f.startswith(g) for g in GENERATED)
+                # in a rebase, "theirs" is the commit being replayed (this build)
+                _git('checkout', '--theirs' if gen else '--ours', '--', f)
+                _git('add', '--', f)
+            cont = _git('-c', 'core.editor=true', 'rebase', '--continue')
+            if cont.returncode != 0:
+                print('could not finish rebase, backing out cleanly:', cont.stderr[:200])
+                _git('rebase', '--abort'); _git('reset', '--hard', 'origin/main'); return
+        p = _git('push', 'origin', 'HEAD:main')
+        if p.returncode == 0:
+            print('pushed on attempt', attempt); return
+        print(f'attempt {attempt}: push rejected, retrying —', p.stderr.strip()[:160])
+    print('could not push after 3 attempts; the next scheduled run will pick it up')
+
+try:
+    sync_and_push()
+except Exception as ex:
+    print('push step warning (build is still committed locally):', ex)
