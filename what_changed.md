@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW1 · rebuilt 21 Aug 17:23 UTC
+GW2 · rebuilt 21 Aug 18:30 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 🔻 **Verbruggen** rating 8.8 → 7.7.
+- 🔻 **Calvert-Lewin** rating 9.6 → 7.9.
