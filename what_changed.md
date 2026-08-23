@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW2 · rebuilt 23 Aug 18:21 UTC
+GW2 · rebuilt 23 Aug 21:17 UTC
 
-- 🔻 **Semenyo** rating 9.7 → 8.5.
+- Nothing decision-relevant changed since yesterday.
