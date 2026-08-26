@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW2 · rebuilt 25 Aug 21:23 UTC
+GW2 · rebuilt 26 Aug 07:42 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 M.Sangaré rose to £5.6m (yours).
+- 📈 De Cuyper rose to £4.6m.
