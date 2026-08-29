@@ -13,8 +13,8 @@ import json, os, sys, urllib.request, datetime, hashlib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 UA   = {'User-Agent': 'Mozilla/5.0 (fpl-scout-cloud)'}
-FULL_HOURS = {7, 9, 12, 15, 18, 21}      # the daily cadence, UTC
-FREEZE_MINS = 100                         # seal predictions within this long of a deadline
+MAX_AGE_H   = 3.5    # rebuild once the committed data is older than this
+FREEZE_MINS = 360    # start sealing this long before a deadline, re-sealing as it nears
 
 def path(n): return os.path.join(HERE, n)
 
@@ -79,10 +79,25 @@ def main():
            and not os.path.exists(path(f'results/gw{e["id"]}.json')):
             return emit('settle', f'GW{e["id"]} finished and unscored')
 
-    # 3. otherwise keep the normal daily cadence
-    if now.hour in FULL_HOURS:
-        return emit('full', f'{now.hour:02d}:00 UTC scheduled rebuild')
-    return emit('skip', 'nothing due this hour')
+    # 3. otherwise: rebuild whenever the data has gone stale.
+    # This used to ask "is it exactly 07:00 now?", which quietly broke: GitHub delays and
+    # drops scheduled ticks, so a job meant for 07:00 arriving at 08:05 missed its window
+    # and nothing recovered it. Staleness can't be missed — a late tick still sees old data.
+    age = None
+    try:
+        if os.path.exists(path('build_stamp.json')):
+            t = (json.load(open(path('build_stamp.json'))) or {}).get('built')
+            if t:
+                built = datetime.datetime.strptime(t.replace('Z', ''), '%Y-%m-%dT%H:%M:%S') \
+                        .replace(tzinfo=datetime.timezone.utc)
+                age = (now - built).total_seconds() / 3600
+    except Exception as e:
+        print('could not read the build age:', e)
+    if age is None:
+        return emit('full', 'no build on record')
+    if age >= MAX_AGE_H:
+        return emit('full', f'data is {age:.1f}h old (rebuild past {MAX_AGE_H}h)')
+    return emit('skip', f'data is only {age:.1f}h old')
 
 if __name__ == '__main__':
     sys.exit(main())
