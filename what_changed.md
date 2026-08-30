@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW3 · rebuilt 30 Aug 00:58 UTC
+GW3 · rebuilt 30 Aug 06:20 UTC
 
-- 📈 Gvardiol rose to £5.6m.
+- Nothing decision-relevant changed since yesterday.
