@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW3 · rebuilt 30 Aug 18:11 UTC
+GW3 · rebuilt 30 Aug 23:05 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Elanga rose to £6.1m.
+- 📈 Wissa rose to £6.1m.
