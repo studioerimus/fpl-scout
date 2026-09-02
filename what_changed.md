@@ -1,5 +1,7 @@
 # FPL Scout — daily refresh
 
-GW3 · rebuilt 01 Sep 22:57 UTC
+GW3 · rebuilt 02 Sep 05:22 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 João Pedro rose to £7.7m (yours).
+- 📈 M.Sangaré rose to £5.7m (yours).
+- 📈 Hall rose to £5.1m.
