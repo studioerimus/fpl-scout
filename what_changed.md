@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW3 · rebuilt 03 Sep 02:39 UTC
+GW3 · rebuilt 03 Sep 07:41 UTC
 
-- 📈 Tzolakis rose to £4.6m.
+- Nothing decision-relevant changed since yesterday.
