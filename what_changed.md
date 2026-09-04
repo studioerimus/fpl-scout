@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW3 · rebuilt 03 Sep 22:10 UTC
+GW3 · rebuilt 04 Sep 05:23 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Gakpo rose to £7.1m.
+- 📈 Calafiori rose to £5.7m (yours).
