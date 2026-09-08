@@ -1,7 +1,5 @@
 # FPL Scout — daily refresh
 
-GW4 · rebuilt 07 Sep 23:55 UTC
+GW4 · rebuilt 08 Sep 07:45 UTC
 
-- ✅ **Konsa** back in the predicted XI.
-- 📈 Isak rose to £9.1m.
-- 📈 De Cuyper rose to £4.8m.
+- Nothing decision-relevant changed since yesterday.
