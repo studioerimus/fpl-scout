@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW4 · rebuilt 09 Sep 22:11 UTC
+GW4 · rebuilt 10 Sep 05:31 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Groß rose to £5.6m.
