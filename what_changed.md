@@ -1,5 +1,7 @@
 # FPL Scout — daily refresh
 
-GW5 · rebuilt 12 Sep 22:47 UTC
+GW5 · rebuilt 13 Sep 05:36 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 João Pedro rose to £7.8m (yours).
+- 📈 Rogers rose to £7.7m.
+- 📈 Havertz rose to £7.6m.
