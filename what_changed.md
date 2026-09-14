@@ -1,5 +1,7 @@
 # FPL Scout — daily refresh
 
-GW5 · rebuilt 13 Sep 20:11 UTC
+GW5 · rebuilt 14 Sep 00:38 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Tavernier rose to £6.1m.
+- 📈 Tarkowski rose to £6.1m.
+- 📈 Gvardiol rose to £5.7m (yours).
