@@ -1,7 +1,5 @@
 # FPL Scout — daily refresh
 
-GW5 · rebuilt 16 Sep 19:19 UTC
+GW5 · rebuilt 17 Sep 01:03 UTC
 
-- ⚠️ **João Pedro** now OUT — was fine yesterday.
-- ⚠️ **João Pedro** dropped out of the predicted XI.
-- 🔻 **João Pedro** rating 9.6 → 3.6.
+- 📈 De Cuyper rose to £4.9m.
