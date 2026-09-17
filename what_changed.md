@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW5 · rebuilt 17 Sep 01:03 UTC
+GW5 · rebuilt 17 Sep 07:05 UTC
 
-- 📈 De Cuyper rose to £4.9m.
+- Nothing decision-relevant changed since yesterday.
