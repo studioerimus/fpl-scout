@@ -1,7 +1,5 @@
 # FPL Scout — daily refresh
 
-GW5 · rebuilt 17 Sep 23:20 UTC
+GW5 · rebuilt 18 Sep 02:51 UTC
 
-- 📈 Haaland rose to £15.6m (yours).
-- 📈 Ødegaard rose to £6.8m.
-- 📈 Bogle rose to £4.6m.
+- Nothing decision-relevant changed since yesterday.
