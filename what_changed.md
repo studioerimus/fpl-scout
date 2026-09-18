@@ -1,5 +1,8 @@
 # FPL Scout — daily refresh
 
-GW5 · rebuilt 18 Sep 16:54 UTC
+GW6 · rebuilt 18 Sep 22:12 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- ⚠️ **João Pedro** now OUT — was fine yesterday.
+- 🔻 **João Pedro** rating 5.6 → 3.6.
+- ⚠️ **M.Sangaré** dropped out of the predicted XI.
+- 🔻 **M.Sangaré** rating 9.1 → 5.4.
