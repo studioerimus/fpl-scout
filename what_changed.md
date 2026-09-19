@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW6 · rebuilt 19 Sep 17:43 UTC
+GW6 · rebuilt 19 Sep 22:07 UTC
 
-- 🔻 **Verbruggen** rating 8.8 → 7.4.
+- Nothing decision-relevant changed since yesterday.
