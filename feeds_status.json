@@ -2,10 +2,10 @@
   "playwright_import": "ok",
   "chromium_launch": "ok chromium",
   "rotowire_http": 200,
-  "rotowire_teams_seen": 8,
-  "lineups": "refreshed 8 teams",
+  "rotowire_teams_seen": 20,
+  "lineups": "loaded but 0 parsed, kept seeded",
   "odds_key_present": true,
   "odds": "the-odds-api 10 matches",
   "fpl_cors": "absent",
-  "ts": "2026-09-21 05:49 UTC"
+  "ts": "2026-09-21 11:48 UTC"
 }
