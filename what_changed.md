@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW6 · rebuilt 20 Sep 20:12 UTC
+GW6 · rebuilt 21 Sep 00:47 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Raya rose to £6.1m.
+- 📈 Kostoulas rose to £5.6m.
