@@ -1,7 +1,5 @@
 # FPL Scout — daily refresh
 
-GW6 · rebuilt 22 Sep 05:47 UTC
+GW6 · rebuilt 22 Sep 10:50 UTC
 
-- 📈 Schade rose to £6.2m.
-- 📈 Hall rose to £5.3m (yours).
-- 📉 João Pedro (yours) fell to £7.7m.
+- Nothing decision-relevant changed since yesterday.
