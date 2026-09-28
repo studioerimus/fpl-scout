@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW6 · rebuilt 27 Sep 23:34 UTC
+GW6 · rebuilt 28 Sep 03:14 UTC
 
-- 📈 Barry rose to £5.7m.
+- Nothing decision-relevant changed since yesterday.
