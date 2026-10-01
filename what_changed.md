@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW6 · rebuilt 01 Oct 08:12 UTC
+GW6 · rebuilt 01 Oct 15:57 UTC
 
-- 📈 Tarkowski rose to £6.2m.
+- Nothing decision-relevant changed since yesterday.
