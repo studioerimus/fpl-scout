@@ -1,6 +1,5 @@
 # FPL Scout — daily refresh
 
-GW6 · rebuilt 06 Oct 17:48 UTC
+GW6 · rebuilt 06 Oct 22:12 UTC
 
-- ⚠️ **Konsa** dropped out of the predicted XI.
-- 🔻 **Konsa** rating 7.5 → 4.4.
+- Nothing decision-relevant changed since yesterday.
