@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW6 · rebuilt 06 Oct 22:12 UTC
+GW6 · rebuilt 07 Oct 02:00 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Rogers rose to £7.8m (yours).
+- 📈 King rose to £5.6m.
