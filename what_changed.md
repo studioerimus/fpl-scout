@@ -1,5 +1,9 @@
 # FPL Scout — daily refresh
 
-GW6 · rebuilt 10 Oct 06:38 UTC
+GW7 · rebuilt 10 Oct 13:15 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 🔻 **Hall** rating 9.8 → 8.4.
+- ✅ **Konsa** back in the predicted XI.
+- ✅ **João Pedro** back in the predicted XI.
+- ⚠️ **M.Sangaré** dropped out of the predicted XI.
+- 🔻 **M.Sangaré** rating 8.6 → 5.0.
