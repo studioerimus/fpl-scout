@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW6 · rebuilt 09 Oct 20:30 UTC
+GW6 · rebuilt 10 Oct 00:27 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Gonzalo rose to £6.1m.
+- 📈 Emersonn rose to £5.6m.
