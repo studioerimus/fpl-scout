@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW7 · rebuilt 13 Oct 02:23 UTC
+GW7 · rebuilt 13 Oct 10:01 UTC
 
-- 📈 Kostoulas rose to £5.7m.
+- Nothing decision-relevant changed since yesterday.
