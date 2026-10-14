@@ -1,5 +1,7 @@
 # FPL Scout — daily refresh
 
-GW7 · rebuilt 13 Oct 22:13 UTC
+GW7 · rebuilt 14 Oct 07:02 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Cherki rose to £7.9m.
+- 📈 Vuskovic rose to £5.1m.
+- 📈 Verbruggen rose to £4.6m (yours).
