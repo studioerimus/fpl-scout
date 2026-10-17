@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW8 · rebuilt 17 Oct 11:57 UTC
+GW8 · rebuilt 17 Oct 17:48 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- ⚠️ **Gvardiol** dropped out of the predicted XI.
+- 🔻 **Gvardiol** rating 8.8 → 5.0.
