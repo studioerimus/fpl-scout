@@ -1,5 +1,7 @@
 # FPL Scout — daily refresh
 
-GW8 · rebuilt 17 Oct 22:08 UTC
+GW8 · rebuilt 18 Oct 05:20 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Cherki rose to £8.0m.
+- 📈 Calafiori rose to £6.0m (yours).
+- 📈 Manzambi rose to £6.0m.
