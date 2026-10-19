@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW8 · rebuilt 19 Oct 18:14 UTC
+GW8 · rebuilt 19 Oct 22:46 UTC
 
-- 🔻 **Gvardiol** rating 6.9 → 4.8.
+- Nothing decision-relevant changed since yesterday.
