@@ -1,3 +1,3 @@
-Built 668 players | optimal GW8 xp(h3)=208.5 form 4-5-1 cost 84.2 | 827059 bytes
+Built 668 players | optimal GW8 xp(h3)=208.7 form 3-5-2 cost 84.8 | 827046 bytes
 
 --- stderr ---
