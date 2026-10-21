@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW8 · rebuilt 21 Oct 06:56 UTC
+GW8 · rebuilt 21 Oct 12:42 UTC
 
-- 📈 Jacquet rose to £5.1m.
+- Nothing decision-relevant changed since yesterday.
