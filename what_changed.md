@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW8 · rebuilt 21 Oct 12:42 UTC
+GW8 · rebuilt 21 Oct 17:51 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- ✅ **Gvardiol** back in the predicted XI.
