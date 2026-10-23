@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW8 · rebuilt 23 Oct 09:01 UTC
+GW8 · rebuilt 23 Oct 14:36 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- ⚠️ **Saka** now OUT — was fine yesterday.
+- 🔻 **Saka** rating 5.4 → 3.4.
