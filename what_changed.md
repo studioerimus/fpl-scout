@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW8 · rebuilt 22 Oct 20:23 UTC
+GW8 · rebuilt 23 Oct 03:04 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Palmer rose to £9.8m (yours).
+- 📈 Mbeumo rose to £7.9m.
