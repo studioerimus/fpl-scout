@@ -1,7 +1,6 @@
 # FPL Scout — daily refresh
 
-GW9 · rebuilt 24 Oct 17:46 UTC
+GW9 · rebuilt 24 Oct 22:50 UTC
 
-- ⚠️ **João Pedro** now OUT — was fine yesterday.
-- ⚠️ **João Pedro** dropped out of the predicted XI.
-- 🔻 **João Pedro** rating 9.7 → 3.6.
+- ⚠️ **Palmer** now SUS — was fine yesterday.
+- 🔻 **Palmer** rating 9.4 → 3.6.
