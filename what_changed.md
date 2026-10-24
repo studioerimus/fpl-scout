@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW9 · rebuilt 24 Oct 10:09 UTC
+GW9 · rebuilt 24 Oct 14:12 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- ⚠️ **Calafiori** dropped out of the predicted XI.
+- 🔻 **Calafiori** rating 10.0 → 6.0.
