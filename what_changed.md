@@ -1,6 +1,6 @@
 # FPL Scout — daily refresh
 
-GW9 · rebuilt 24 Oct 22:50 UTC
+GW9 · rebuilt 25 Oct 05:36 UTC
 
-- ⚠️ **Palmer** now SUS — was fine yesterday.
-- 🔻 **Palmer** rating 9.4 → 3.6.
+- 📈 Rice rose to £7.4m.
+- 📈 N.Jackson rose to £6.7m.
