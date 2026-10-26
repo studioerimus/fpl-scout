@@ -3,9 +3,9 @@
   "chromium_launch": "ok chromium",
   "rotowire_http": 200,
   "rotowire_teams_seen": 22,
-  "lineups": "loaded but 0 parsed, kept seeded",
+  "lineups": "refreshed 20 teams",
   "odds_key_present": true,
   "odds": "the-odds-api 10 matches",
   "fpl_cors": "absent",
-  "ts": "2026-10-26 08:26 UTC"
+  "ts": "2026-10-26 15:46 UTC"
 }
