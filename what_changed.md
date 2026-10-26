@@ -1,7 +1,5 @@
 # FPL Scout — daily refresh
 
-GW9 · rebuilt 26 Oct 02:52 UTC
+GW9 · rebuilt 26 Oct 08:26 UTC
 
-- 📈 Barcola rose to £8.1m.
-- 📈 Muharemović rose to £5.1m.
-- 📈 Konsa rose to £4.7m (yours).
+- Nothing decision-relevant changed since yesterday.
