@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW9 · rebuilt 27 Oct 11:29 UTC
+GW9 · rebuilt 27 Oct 17:19 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- ⚠️ **João Pedro** now OUT — was fine yesterday.
+- 🔻 **João Pedro** rating 5.6 → 3.3.
