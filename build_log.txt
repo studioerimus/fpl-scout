@@ -1,3 +1,3 @@
-Built 669 players | optimal GW9 xp(h3)=251.3 form 5-2-3 cost 93.6 | 827626 bytes
+Built 669 players | optimal GW9 xp(h3)=252.0 form 5-2-3 cost 93.7 | 827658 bytes
 
 --- stderr ---
