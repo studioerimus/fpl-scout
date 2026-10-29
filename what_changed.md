@@ -1,6 +1,5 @@
 # FPL Scout — daily refresh
 
-GW9 · rebuilt 29 Oct 04:02 UTC
+GW9 · rebuilt 29 Oct 11:14 UTC
 
-- 📈 Manzambi rose to £6.1m.
-- 📉 M.Sangaré (yours) fell to £5.4m.
+- Nothing decision-relevant changed since yesterday.
