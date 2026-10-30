@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW9 · rebuilt 30 Oct 09:29 UTC
+GW9 · rebuilt 30 Oct 16:28 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- ✅ **Calafiori** back in the predicted XI.
