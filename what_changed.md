@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW9 · rebuilt 29 Oct 22:24 UTC
+GW9 · rebuilt 30 Oct 02:21 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Evanilson rose to £6.3m (yours).
+- 📉 Calafiori (yours) fell to £5.9m.
