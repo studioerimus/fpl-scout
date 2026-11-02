@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW10 · rebuilt 02 Nov 07:07 UTC
+GW10 · rebuilt 02 Nov 17:43 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 🔻 **M.Sangaré** rating 6.7 → 4.8.
