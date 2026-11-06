@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW10 · rebuilt 05 Nov 19:24 UTC
+GW10 · rebuilt 06 Nov 00:41 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Manzambi rose to £6.2m.
+- 📈 Hill rose to £5.6m.
