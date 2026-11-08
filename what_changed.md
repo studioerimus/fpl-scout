@@ -1,6 +1,8 @@
 # FPL Scout — daily refresh
 
-GW11 · rebuilt 08 Nov 04:00 UTC
+GW11 · rebuilt 08 Nov 11:12 UTC
 
-- 📈 N.Jackson rose to £7.1m (yours).
-- 📈 Tavernier rose to £6.7m (yours).
+- 🔻 **Konsa** rating 9.2 → 8.0.
+- 🔻 **Van Hecke** rating 10.0 → 8.9.
+- 🔻 **Calafiori** rating 9.3 → 8.2.
+- 🔻 **Haaland** rating 9.5 → 7.7.
