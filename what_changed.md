@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW11 · rebuilt 07 Nov 23:21 UTC
+GW11 · rebuilt 08 Nov 04:00 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 N.Jackson rose to £7.1m (yours).
+- 📈 Tavernier rose to £6.7m (yours).
