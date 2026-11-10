@@ -1,6 +1,5 @@
 # FPL Scout — daily refresh
 
-GW11 · rebuilt 09 Nov 19:40 UTC
+GW11 · rebuilt 10 Nov 02:30 UTC
 
-- ⚠️ **M.Sangaré** dropped out of the predicted XI.
-- 🔻 **M.Sangaré** rating 8.0 → 5.0.
+- Nothing decision-relevant changed since yesterday.
