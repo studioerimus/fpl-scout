@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW11 · rebuilt 14 Nov 20:19 UTC
+GW11 · rebuilt 15 Nov 00:40 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Konsa rose to £4.9m (yours).
