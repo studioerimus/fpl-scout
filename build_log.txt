@@ -1,3 +1,3 @@
-Built 672 players | optimal GW11 xp(h3)=251.7 form 5-2-3 cost 86.4 | 828198 bytes
+Built 672 players | optimal GW11 xp(h3)=251.7 form 5-2-3 cost 86.4 | 828322 bytes
 
 --- stderr ---
