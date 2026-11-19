@@ -1,5 +1,7 @@
 # FPL Scout — daily refresh
 
-GW11 · rebuilt 18 Nov 19:20 UTC
+GW11 · rebuilt 19 Nov 01:38 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 McGinn rose to £5.5m.
+- 📈 Suzuki rose to £5.1m.
+- 📈 Gomez rose to £5.1m (yours).
