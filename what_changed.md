@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW11 · rebuilt 19 Nov 18:48 UTC
+GW11 · rebuilt 20 Nov 00:59 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 N.Jackson rose to £7.2m (yours).
