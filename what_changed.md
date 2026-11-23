@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW12 · rebuilt 22 Nov 21:28 UTC
+GW12 · rebuilt 23 Nov 02:08 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Wirtz rose to £7.4m.
+- 📈 N.Jackson rose to £7.3m (yours).
