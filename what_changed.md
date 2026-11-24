@@ -1,5 +1,6 @@
 # FPL Scout — daily refresh
 
-GW12 · rebuilt 23 Nov 23:16 UTC
+GW12 · rebuilt 24 Nov 08:02 UTC
 
-- 🔻 **Dubravka** rating 3.2 → 2.1.
+- 📈 Tavernier rose to £6.8m (yours).
+- 📈 Rudoni rose to £5.0m.
