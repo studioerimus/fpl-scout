@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW12 · rebuilt 24 Nov 19:52 UTC
+GW12 · rebuilt 25 Nov 03:18 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Hill rose to £5.7m.
