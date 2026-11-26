@@ -1,5 +1,5 @@
 # FPL Scout — daily refresh
 
-GW12 · rebuilt 25 Nov 22:54 UTC
+GW12 · rebuilt 26 Nov 04:40 UTC
 
-- Nothing decision-relevant changed since yesterday.
+- 📈 Isak rose to £9.4m.
