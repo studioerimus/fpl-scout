@@ -1,3 +1,3 @@
-Built 674 players | optimal GW13 xp(h3)=171.0 form 3-4-3 cost 83.3 | 824255 bytes
+Built 674 players | optimal GW13 xp(h3)=169.8 form 3-4-3 cost 80.3 | 824139 bytes
 
 --- stderr ---
